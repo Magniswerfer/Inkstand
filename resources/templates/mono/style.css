@@ -1,7 +1,7 @@
 :root { --text: #2a2a29; --bg: #fcfcfb; --muted: #9a9a96; --link: #1b9af0; }
 [data-theme='dark'] { --text: #d8d8d5; --bg: #171717; --muted: #6a6a67; --link: #3aacfa; }
 html { background: var(--bg); color: var(--text); }
-body { font: 16px/1.7 'iA Writer Duo S', 'iA Writer Mono S', 'IBM Plex Mono', ui-monospace, Menlo, monospace; }
+body { font: 16px/1.7 'iA Writer Duo S', 'iA Writer Mono S', ui-monospace, Menlo, monospace; }
 article { max-width: 66ch; margin: 0 auto; padding: 3.5em 1.5em 6em; }
 h1, h2, h3, h4, h5, h6 { font-size: 1em; font-weight: 600; margin: 2em 0 0.8em; line-height: inherit; }
 h1::before { content: '# '; color: var(--muted); }

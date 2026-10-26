@@ -6,6 +6,7 @@ import { Decoration, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate
 import type { MarkupMode } from '@shared/types'
 import { TAG_RE } from '@shared/text'
 import { isCodeAt } from './util'
+import { textWidth } from './measure'
 
 const markDeco = Decoration.mark({ class: 'cm-fw-mark' })
 const hide = Decoration.replace({})
@@ -15,11 +16,14 @@ const highlightDeco = Decoration.mark({ class: 'cm-fw-highlight' })
 const blockDeco = Decoration.line({ class: 'cm-fw-block', attributes: { spellcheck: 'false' } })
 const noSpellDeco = Decoration.mark({ class: 'cm-fw-mark', attributes: { spellcheck: 'false' } })
 const frontMatterDeco = Decoration.line({ class: 'cm-fw-frontmatter' })
-const headingLine = (level: number, markLen: number) =>
-  Decoration.line({
-    class: `cm-fw-heading cm-fw-h${level}`,
-    attributes: { style: `--fw-hmarks: ${markLen - 1}` }
-  })
+const headingLine = (level: number, marks: string) =>
+  Decoration.line({ class: `cm-fw-heading cm-fw-h${level}`, attributes: { style: `text-indent: -${textWidth(marks)}px` } })
+/** Wrapped lines of list items and quotes line up with the text, not the marker. */
+const hangingLine = (prefix: string) => {
+  const w = textWidth(prefix)
+  return Decoration.line({ attributes: { style: `padding-left: ${w}px; text-indent: -${w}px` } })
+}
+const LIST_PREFIX = /^(\s*([-*+]|\d{1,9}[.)])[ \t]+(\[[ xX]\][ \t]+)?|\s*(>[ \t]?)+)/
 
 const INLINE_MARKS = new Set(['EmphasisMark', 'CodeMark', 'StrikethroughMark', 'LinkMark', 'QuoteMark', 'ListMark', 'TaskMarker', 'HeaderMark', 'TableDelimiter'])
 const HIDEABLE = new Set(['EmphasisMark', 'StrikethroughMark', 'LinkMark', 'HeaderMark'])
@@ -66,7 +70,7 @@ function build(view: EditorView, mode: MarkupMode, hanging: boolean): Decoration
           const line = state.doc.lineAt(node.from)
           const m = /^#{1,6}\s?/.exec(line.text)
           if (m) {
-            if (hanging && !(active && !active.has(line.number))) decos.push(headingLine(level, m[0].length).range(line.from))
+            if (hanging && !(active && !active.has(line.number))) decos.push(headingLine(level, m[0]).range(line.from))
             else decos.push(Decoration.line({ class: `cm-fw-heading cm-fw-h${level}` }).range(line.from))
           }
           return
@@ -106,6 +110,8 @@ function build(view: EditorView, mode: MarkupMode, hanging: boolean): Decoration
       }
       if (isCodeAt(state, line.from) && !/^\s*\//.test(line.text)) continue
       if (CONTENT_BLOCK_RE.test(line.text) && !isCodeAt(state, line.from)) decos.push(blockDeco.range(line.from))
+      const prefix = LIST_PREFIX.exec(line.text)
+      if (prefix && prefix[0].length < line.text.length && !isCodeAt(state, line.from + prefix[0].length)) decos.push(hangingLine(prefix[0]).range(line.from))
       for (const m of line.text.matchAll(TAG_RE)) {
         const at = line.from + m.index!
         if (/^#{1,6}\s/.test(line.text) && m.index === 0) continue

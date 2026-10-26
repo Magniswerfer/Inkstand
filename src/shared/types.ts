@@ -88,7 +88,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   font: 'duo',
   customFont: '',
-  fontSize: 17,
+  fontSize: 18,
   lineHeight: 1.6,
   lineWidth: 'medium',
   markup: 'dim',

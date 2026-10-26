@@ -177,6 +177,12 @@ export class Editor {
     if (effects.length) this.view.dispatch({ effects })
   }
 
+  /** Rebuilds decorations that depend on measured text widths (after a font change). */
+  remeasure() {
+    this.view.dispatch({ effects: this.c.markup.reconfigure(markup(this.settings.markup, this.settings.hangingHeadings)) })
+    this.view.requestMeasure()
+  }
+
   /** Replaces the whole document (new file opened); resets undo history. */
   setDoc(text: string, borrowed: Ranges = []) {
     this.view.setState(this.createState(text, this.settings))

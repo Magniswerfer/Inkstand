@@ -7,7 +7,8 @@ Licensed under the GNU AGPL v3.
 ## Features
 
 **Writing**
-- Distraction-free editor with dimmed or hidden Markdown, heading marks hanging in the margin, and Mono, Duo, Sans, Serif or any installed font. iA Writer's free fonts are used when installed; IBM Plex ships as the fallback.
+- Distraction-free editor with dimmed or hidden Markdown, heading marks hanging in the margin, hanging indents for lists and quotes, and a steady blue caret
+- Ships with iA Writer Mono, Duo and Quattro (free under the SIL Open Font License, see `resources/app/fonts/iA-Writer-OFL.md`) plus IBM Plex Serif, or use any installed font
 - Focus mode (sentence, paragraph or line) and typewriter mode
 - Syntax highlight for adjectives, nouns, adverbs, verbs and conjunctions
 - Style check for fillers, clichés and redundancies, with replacements, an ignore list and custom word or regex patterns
@@ -33,7 +34,7 @@ Licensed under the GNU AGPL v3.
 - Publish drafts to WordPress, Ghost, Medium and Micro.blog. Credentials are encrypted with the system keychain.
 
 **App**
-- Light, dark or system theme; multiple windows (native tabs on macOS); recent files; file associations
+- Light, dark or system theme; translucent sidebar on macOS; window chrome that fades while you type; resizable library; multiple windows (native tabs on macOS); recent files; file associations
 
 ## Development
 

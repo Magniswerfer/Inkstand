@@ -1,10 +1,11 @@
 import type { Settings } from '@shared/types'
+import { setMeasureFont } from './editor/measure'
 
-// Installed iA Writer fonts (free, OFL) are picked up if present; IBM Plex ships with the app.
+// iA Writer Mono, Duo and Quattro ship with the app (SIL OFL); IBM Plex Serif covers the serif option.
 export const FONT_STACKS: Record<Exclude<Settings['font'], 'custom'>, string> = {
-  mono: "'iA Writer Mono S', 'iA Writer Mono V', 'IBM Plex Mono', ui-monospace, Menlo, monospace",
-  duo: "'iA Writer Duo S', 'iA Writer Duo V', 'iA Writer Duospace', 'IBM Plex Mono', ui-monospace, Menlo, monospace",
-  sans: "'iA Writer Quattro S', 'iA Writer Quattro V', 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif",
+  mono: "'iA Writer Mono S', ui-monospace, Menlo, monospace",
+  duo: "'iA Writer Duo S', ui-monospace, Menlo, monospace",
+  sans: "'iA Writer Quattro S', -apple-system, 'Segoe UI', sans-serif",
   serif: "'IBM Plex Serif', Charter, 'Iowan Old Style', Georgia, serif"
 }
 
@@ -21,20 +22,29 @@ export function applyAppearance(s: Settings) {
   current = s
   const root = document.documentElement
   root.dataset.theme = resolvedTheme(s)
+  root.dataset.platform = window.api.platform
   const family = s.font === 'custom' ? `${s.customFont || 'serif'}, ${FONT_STACKS.serif}` : FONT_STACKS[s.font]
   root.style.setProperty('--fw-font', family)
   root.style.setProperty('--fw-size', s.fontSize + 'px')
   root.style.setProperty('--fw-line-height', String(s.lineHeight))
   root.style.setProperty('--fw-width', WIDTHS[s.lineWidth])
   root.dataset.font = s.font
-  document.fonts.ready.then(() => measureMarks(family, s.fontSize))
+  const font = `${s.fontSize}px ${family}`
+  if (font !== measuredFont) {
+    measuredFont = font
+    // Measure only once the face has loaded, or hanging indents use the fallback font's widths.
+    Promise.all([document.fonts.load(font), document.fonts.load('italic ' + font), document.fonts.load('bold ' + font)]).then(() => {
+      if (measuredFont !== font) return
+      setMeasureFont(font)
+      for (const cb of metricListeners) cb()
+    })
+  }
 }
 
-/** Heading marks hang in the margin; their width depends on the font, so measure it. */
-function measureMarks(family: string, size: number) {
-  const ctx = document.createElement('canvas').getContext('2d')!
-  ctx.font = `600 ${size}px ${family}`
-  const root = document.documentElement
-  root.style.setProperty('--fw-hash-w', ctx.measureText('#').width + 'px')
-  root.style.setProperty('--fw-space-w', ctx.measureText(' ').width + 'px')
+let measuredFont = ''
+const metricListeners: (() => void)[] = []
+
+/** Called when the editor font's metrics change and text measurements must be redone. */
+export function onMetrics(cb: () => void) {
+  metricListeners.push(cb)
 }

@@ -51,7 +51,10 @@ function createWindow(path?: string, restore = false) {
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 14, y: 14 },
     tabbingIdentifier: 'foss-write',
-    backgroundColor: nativeTheme.shouldUseDarkColors ? '#161616' : '#fbfbfa',
+    // macOS: translucent sidebar. Elsewhere an opaque background avoids a white flash.
+    ...(process.platform === 'darwin'
+      ? { vibrancy: 'sidebar' as const, visualEffectState: 'followWindow' as const, backgroundColor: '#00000000' }
+      : { backgroundColor: nativeTheme.shouldUseDarkColors ? '#141414' : '#ffffff' }),
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/index.mjs'),
       sandbox: false,
@@ -358,6 +361,10 @@ app.whenReady().then(async () => {
   handle('authorship:set', (_e, path: string, a: Authorship) => setAuthorship(path, a))
   handle('spell:add', (e, word: string) => e.sender.session.addWordToSpellCheckerDictionary(word))
 
+  // Native chrome (vibrancy, dialogs, menus) follows the app's theme setting.
+  const syncTheme = () => (nativeTheme.themeSource = getSettings().theme)
+  syncTheme()
+  onSettingsChanged(syncTheme)
   const rebuild = () => buildMenu(openPath)
   rebuild()
   // Settings changes flip menu checkmarks; rebuilding is cheap.

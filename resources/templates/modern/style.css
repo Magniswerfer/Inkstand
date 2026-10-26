@@ -1,7 +1,7 @@
 :root { --text: #1d1d1f; --bg: #ffffff; --muted: #6e6e73; --link: #0a6fd1; --rule: #e5e5ea; }
 [data-theme='dark'] { --text: #e6e6e8; --bg: #161617; --muted: #98989d; --link: #5aa9f6; --rule: #2c2c2e; }
 html { background: var(--bg); color: var(--text); }
-body { font: 17px/1.6 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+body { font: 17px/1.6 'iA Writer Quattro S', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
 article { max-width: 42em; margin: 0 auto; padding: 3.5em 1.5em 6em; }
 h1, h2, h3, h4, h5, h6 { line-height: 1.2; letter-spacing: -0.01em; margin: 1.7em 0 0.55em; font-weight: 650; }
 h1 { font-size: 2.2em; margin-top: 0.3em; letter-spacing: -0.02em; }

@@ -1,7 +1,7 @@
 /* Standard manuscript format: Courier-style, double-spaced, indented paragraphs, # for scene breaks. */
 html { background: white; color: black; }
 [data-theme='dark'] { background: #1b1b1b; color: #ddd; }
-body { font: 12pt/2 'Courier Prime', 'Courier New', Courier, 'IBM Plex Mono', monospace; }
+body { font: 12pt/2 'Courier Prime', 'Courier New', Courier, 'iA Writer Mono S', monospace; }
 article { max-width: 6.5in; margin: 0 auto; padding: 1in 0.5in 2in; }
 p { margin: 0; text-indent: 0.5in; }
 h1, h2, h3 { font-size: 12pt; font-weight: normal; text-align: center; margin: 2em 0 1em; text-transform: uppercase; }

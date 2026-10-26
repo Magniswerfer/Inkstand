@@ -54,6 +54,9 @@ export class Library {
       }
     }
     if (this.view.kind === 'search') this.view = { kind: 'home' }
+    // Like iA Writer, open straight into your documents rather than an overview.
+    const first = app.settings.libraryLocations[0]
+    if (!saved && first) this.view = { kind: 'folder', path: first }
     this.render()
   }
 
@@ -460,4 +463,32 @@ export class Library {
     }
     return items
   }
+}
+
+/** Lets the sidebar be resized by dragging its right edge; the width is remembered per machine. */
+export function sidebarResizer(sidebar: HTMLElement, app: HTMLElement) {
+  const saved = Number(localStorage.getItem('fw-sidebar-w'))
+  if (saved) app.style.setProperty('--fw-sidebar-w', saved + 'px')
+  const handle = h('div', { class: 'sb-resize', role: 'separator', 'aria-orientation': 'vertical', 'aria-label': 'Resize library' })
+  handle.addEventListener('mousedown', (e) => {
+    e.preventDefault()
+    app.classList.add('resizing')
+    const move = (ev: MouseEvent) => {
+      const w = Math.min(480, Math.max(200, ev.clientX))
+      app.style.setProperty('--fw-sidebar-w', w + 'px')
+      localStorage.setItem('fw-sidebar-w', String(w))
+    }
+    const up = () => {
+      app.classList.remove('resizing')
+      window.removeEventListener('mousemove', move)
+      window.removeEventListener('mouseup', up)
+    }
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', up)
+  })
+  handle.addEventListener('dblclick', () => {
+    app.style.removeProperty('--fw-sidebar-w')
+    localStorage.removeItem('fw-sidebar-w')
+  })
+  sidebar.append(handle)
 }

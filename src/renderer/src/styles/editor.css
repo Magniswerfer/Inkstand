@@ -19,8 +19,22 @@
   max-width: var(--fw-width);
   width: 100%;
   margin: 0 auto;
-  padding: 40px 0 45vh;
+  padding: 56px 0 45vh;
   caret-color: var(--accent);
+}
+
+/* Scrollbars stay out of sight until you reach for them. */
+#editor .cm-scroller::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+#editor:hover .cm-scroller::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--fg) 16%, transparent);
+  background-clip: content-box;
+}
+
+body.typing #editor .cm-scroller::-webkit-scrollbar-thumb {
+  background: transparent;
 }
 
 /* Keep a comfortable gutter on narrow windows and room for hanging marks. */
@@ -36,9 +50,16 @@
   padding: 0;
 }
 
+/* A thick, steady caret that reaches a little above and below the line, like a typewriter guide. */
 #editor .cm-cursor {
-  border-left: 2px solid var(--accent);
+  border-left: 3px solid var(--accent);
   margin-left: -1px;
+  border-radius: 1px;
+  transform: scaleY(1.12);
+}
+
+#editor .cm-cursorLayer {
+  animation: none !important;
 }
 
 #editor .cm-selectionBackground,
@@ -80,7 +101,7 @@
 }
 
 .cm-fw-t-code {
-  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-family: 'iA Writer Mono S', ui-monospace, Menlo, monospace;
   font-size: 0.92em;
 }
 
@@ -109,9 +130,12 @@
   color: var(--dim);
 }
 
-/* Heading marks hang in the margin so heading text lines up with body text. */
-.cm-fw-hanging .cm-fw-heading[style] {
-  text-indent: calc(-1 * (var(--fw-hmarks) * var(--fw-hash-w, 0.6em) + var(--fw-space-w, 0.3em)));
+/* In dim mode every piece of markup is the same quiet grey, whatever the grammar calls it. */
+.cm-fw-markup-dim .cm-fw-mark,
+.cm-fw-markup-dim .cm-fw-mark *,
+.cm-fw-markup-hide .cm-fw-mark,
+.cm-fw-markup-hide .cm-fw-mark * {
+  color: var(--dim) !important;
 }
 
 .cm-fw-tag {

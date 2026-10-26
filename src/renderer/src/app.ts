@@ -9,7 +9,7 @@ import { findNext, findPrevious, openSearchPanel } from '@codemirror/search'
 import { renderMarkdown, resolvePath, type RenderContext, type Rendered } from './markdown/render'
 import { basename, debounce, dirname, stripExt } from './ui/dom'
 import { prompt, toast } from './ui/overlay'
-import { Library } from './ui/library'
+import { Library, sidebarResizer } from './ui/library'
 import { Preview } from './ui/preview'
 import { Outline } from './ui/outline'
 import { StatusBar } from './ui/statusbar'
@@ -19,7 +19,7 @@ import { openVersions } from './ui/versions'
 import { openExport, quickExport, copyAs, exportTo } from './ui/export'
 import { openPublish } from './ui/publish'
 import { openCheatsheet, guideText } from './ui/help'
-import { applyAppearance } from './appearance'
+import { applyAppearance, onMetrics } from './appearance'
 
 const api = window.api
 
@@ -54,7 +54,9 @@ export class App {
     applyAppearance(this.settings)
     const root = document.getElementById('app')!
     this.editor = new Editor(root.querySelector('#editor')!, this, this.settings)
+    onMetrics(() => this.editor.remeasure())
     this.library = new Library(this, root.querySelector('#sidebar')!)
+    sidebarResizer(root.querySelector('#sidebar')!, root)
     this.preview = new Preview(this, root.querySelector('#preview')!)
     this.outline = new Outline(this, root.querySelector('#outline')!)
     this.status = new StatusBar(this, root.querySelector('#statusbar')!)
