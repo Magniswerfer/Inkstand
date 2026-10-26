@@ -1,0 +1,21 @@
+/* Double-spaced, 12pt Times-style, one-inch margins. */
+html { background: white; color: black; }
+[data-theme='dark'] { background: #1b1b1b; color: #ddd; }
+body { font: 12pt/2 'Times New Roman', Times, 'Liberation Serif', 'IBM Plex Serif', serif; }
+article { max-width: 6.5in; margin: 0 auto; padding: 1in 0.5in 2in; }
+p { margin: 0; text-indent: 0.5in; }
+h1 + p, h2 + p, h3 + p, blockquote + p, figure + p, pre + p, table + p, ul + p, ol + p { text-indent: 0; }
+h1, h2, h3, h4, h5, h6 { font-size: 12pt; margin: 0; line-height: 2; }
+h1 { text-align: center; font-weight: normal; }
+h2 { font-weight: bold; text-align: center; }
+h3 { font-weight: bold; }
+h4 { font-weight: bold; font-style: italic; }
+blockquote { border: 0; padding: 0 0 0 0.5in; opacity: 1; margin: 0; }
+ul, ol { margin: 0; }
+a { color: inherit; }
+.footnotes { font-size: 10pt; line-height: 1.5; }
+.title-block { text-align: center; }
+.title-block h1 { margin: 0; }
+.title-block p { margin: 0; text-indent: 0; }
+.title-block p:empty { display: none; }
+@media print { article { padding: 0; max-width: none; margin: 0 1in; } }

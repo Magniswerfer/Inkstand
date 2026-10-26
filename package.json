@@ -1,0 +1,129 @@
+{
+  "name": "foss-write",
+  "productName": "FOSS Write",
+  "version": "0.1.0",
+  "description": "A focused, open-source Markdown writing app.",
+  "license": "AGPL-3.0-or-later",
+  "main": "./out/main/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "dist": "electron-vite build && electron-builder",
+    "test:e2e": "electron-vite build && node test/e2e/smoke.mjs && node test/e2e/exports.mjs"
+  },
+  "devDependencies": {
+    "@codemirror/autocomplete": "^6.20.4",
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/language-data": "^6.5.2",
+    "@codemirror/search": "^6.7.2",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource/ibm-plex-serif": "^5.3.0",
+    "@lezer/highlight": "^1.2.5",
+    "@lezer/markdown": "^1.8.1",
+    "@types/markdown-it": "^14.2.0",
+    "@types/node": "^26.6.5",
+    "@types/turndown": "^5.0.6",
+    "compromise": "^14.19.0",
+    "diff": "^9.0.0",
+    "docx": "^9.14.0",
+    "dompurify": "^3.4.17",
+    "electron": "^39.8.10",
+    "electron-builder": "^26.18.0",
+    "electron-vite": "^6.0.0",
+    "highlight.js": "^11.12.0",
+    "js-yaml": "^5.5.0",
+    "katex": "^0.19.1",
+    "markdown-it": "^15.0.3",
+    "markdown-it-anchor": "^10.0.0",
+    "markdown-it-attrs": "^5.0.1",
+    "markdown-it-deflist": "^4.0.0",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-mark": "^4.0.0",
+    "markdown-it-sub": "^2.0.0",
+    "markdown-it-sup": "^2.0.0",
+    "markdown-it-task-lists": "^2.1.1",
+    "playwright-core": "^1.64.1",
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2",
+    "typescript": "5.9",
+    "vite": "^7.3.7",
+    "vitest": "^5.0.5"
+  },
+  "author": "FOSS Write contributors",
+  "repository": "https://github.com/Magniswerfer/foss-write",
+  "build": {
+    "appId": "org.fosswrite.app",
+    "productName": "FOSS Write",
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/templates",
+        "to": "templates"
+      },
+      {
+        "from": "resources/app",
+        "to": "app"
+      },
+      {
+        "from": "node_modules/katex/dist",
+        "to": "vendor/katex",
+        "filter": [
+          "katex.min.css",
+          "fonts/**"
+        ]
+      }
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "md",
+          "markdown",
+          "mdown",
+          "mkd",
+          "txt",
+          "text"
+        ],
+        "name": "Markdown Document",
+        "role": "Editor"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.png"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Office",
+      "icon": "build/icon.png"
+    }
+  }
+}

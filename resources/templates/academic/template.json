@@ -1,0 +1,11 @@
+{
+  "name": "Academic",
+  "description": "Double-spaced, 12pt, one-inch margins.",
+  "author": "FOSS Write",
+  "document": "document.html",
+  "header": "header.html",
+  "footer": "footer.html",
+  "title": "title.html",
+  "headerHeight": 60,
+  "footerHeight": 60
+}

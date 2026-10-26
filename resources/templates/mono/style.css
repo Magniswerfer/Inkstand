@@ -1,0 +1,27 @@
+:root { --text: #2a2a29; --bg: #fcfcfb; --muted: #9a9a96; --link: #1b9af0; }
+[data-theme='dark'] { --text: #d8d8d5; --bg: #171717; --muted: #6a6a67; --link: #3aacfa; }
+html { background: var(--bg); color: var(--text); }
+body { font: 16px/1.7 'iA Writer Duo S', 'iA Writer Mono S', 'IBM Plex Mono', ui-monospace, Menlo, monospace; }
+article { max-width: 66ch; margin: 0 auto; padding: 3.5em 1.5em 6em; }
+h1, h2, h3, h4, h5, h6 { font-size: 1em; font-weight: 600; margin: 2em 0 0.8em; line-height: inherit; }
+h1::before { content: '# '; color: var(--muted); }
+h2::before { content: '## '; color: var(--muted); }
+h3::before { content: '### '; color: var(--muted); }
+h4::before { content: '#### '; color: var(--muted); }
+h1 { margin-top: 0.5em; }
+p { margin: 0 0 1.7em; }
+a { color: var(--link); }
+pre, code { font-size: 1em !important; }
+:not(pre) > code { background: none; padding: 0; }
+:not(pre) > code::before, :not(pre) > code::after { content: '`'; color: var(--muted); }
+blockquote { border: 0; padding-left: 2ch; position: relative; }
+blockquote::before { content: '>'; position: absolute; left: 0; color: var(--muted); }
+.title-block { margin-bottom: 3.4em; }
+.title-block h1 { margin: 0; }
+.title-block p { margin: 0; color: var(--muted); }
+.title-block p:empty { display: none; }
+@media print {
+  html { background: white; }
+  body { font-size: 10pt; }
+  article { padding: 0 1in; max-width: none; }
+}

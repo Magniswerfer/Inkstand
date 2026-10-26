@@ -1,0 +1,11 @@
+{
+  "name": "Manuscript",
+  "description": "Standard manuscript format for submissions.",
+  "author": "FOSS Write",
+  "document": "document.html",
+  "header": "header.html",
+  "footer": "footer.html",
+  "title": "title.html",
+  "headerHeight": 60,
+  "footerHeight": 60
+}

@@ -1,0 +1,331 @@
+#editor .cm-editor {
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+#editor .cm-editor.cm-focused {
+  outline: none;
+}
+
+#editor .cm-scroller {
+  font-family: var(--fw-font);
+  font-size: var(--fw-size);
+  line-height: var(--fw-line-height);
+  font-feature-settings: 'kern', 'liga', 'calt';
+}
+
+#editor .cm-content {
+  max-width: var(--fw-width);
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 0 45vh;
+  caret-color: var(--accent);
+}
+
+/* Keep a comfortable gutter on narrow windows and room for hanging marks. */
+#editor .cm-scroller {
+  padding: 0 clamp(24px, 6vw, 96px);
+}
+
+#editor .cm-fw-typewriter .cm-content {
+  padding-top: 45vh;
+}
+
+#editor .cm-line {
+  padding: 0;
+}
+
+#editor .cm-cursor {
+  border-left: 2px solid var(--accent);
+  margin-left: -1px;
+}
+
+#editor .cm-selectionBackground,
+#editor .cm-focused .cm-selectionBackground,
+#editor .cm-content ::selection {
+  background: var(--selection) !important;
+}
+
+#editor .cm-placeholder {
+  color: var(--dim);
+}
+
+/* ------------------------------------------------------------------ Markdown */
+
+.cm-fw-t-heading,
+.cm-fw-heading {
+  font-weight: 600;
+}
+
+.cm-fw-t-strong {
+  font-weight: 600;
+}
+
+.cm-fw-t-em {
+  font-style: italic;
+}
+
+.cm-fw-t-strike {
+  text-decoration: line-through;
+  text-decoration-color: var(--dim);
+}
+
+.cm-fw-t-link {
+  color: var(--fg);
+}
+
+.cm-fw-t-url {
+  color: var(--dim);
+}
+
+.cm-fw-t-code {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.92em;
+}
+
+:root[data-font='mono'] .cm-fw-t-code,
+:root[data-font='duo'] .cm-fw-t-code {
+  font-size: 1em;
+}
+
+.cm-fw-t-quote {
+  color: var(--fg-soft);
+}
+
+.cm-fw-t-mark,
+.cm-fw-mark {
+  color: var(--dim);
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+}
+
+.cm-fw-markup-show .cm-fw-mark {
+  color: inherit;
+}
+
+.cm-fw-t-comment {
+  color: var(--dim);
+}
+
+/* Heading marks hang in the margin so heading text lines up with body text. */
+.cm-fw-hanging .cm-fw-heading[style] {
+  text-indent: calc(-1 * (var(--fw-hmarks) * var(--fw-hash-w, 0.6em) + var(--fw-space-w, 0.3em)));
+}
+
+.cm-fw-tag {
+  color: var(--accent);
+}
+
+.cm-fw-wikilink {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  text-underline-offset: 3px;
+}
+
+.cm-fw-highlight {
+  background: var(--mark-bg);
+  border-radius: 2px;
+}
+
+.cm-fw-block {
+  color: var(--accent);
+}
+
+.cm-fw-frontmatter,
+.cm-fw-frontmatter * {
+  color: var(--dim) !important;
+  font-weight: normal !important;
+  font-style: normal !important;
+}
+
+/* Code in fenced blocks */
+.cm-fw-t-keyword { color: #a3489b; }
+.cm-fw-t-string { color: #3b8a3e; }
+.cm-fw-t-number { color: #b25c1a; }
+.cm-fw-t-type { color: #2c6fb5; }
+.cm-fw-t-function { color: #2c6fb5; }
+.cm-fw-t-property { color: #73613a; }
+.cm-fw-t-tag { color: #a3489b; }
+.cm-fw-t-meta { color: var(--dim); }
+
+:root[data-theme='dark'] .cm-fw-t-keyword { color: #d38bd0; }
+:root[data-theme='dark'] .cm-fw-t-string { color: #8fc98a; }
+:root[data-theme='dark'] .cm-fw-t-number { color: #e19b61; }
+:root[data-theme='dark'] .cm-fw-t-type,
+:root[data-theme='dark'] .cm-fw-t-function { color: #79aef0; }
+:root[data-theme='dark'] .cm-fw-t-property { color: #cdb98a; }
+:root[data-theme='dark'] .cm-fw-t-tag { color: #d38bd0; }
+
+/* ------------------------------------------------------------------ focus, syntax, style */
+
+.cm-fw-focus .cm-fw-dim,
+.cm-fw-focus .cm-fw-dim * {
+  color: var(--dim) !important;
+  text-decoration-color: transparent !important;
+  background: transparent !important;
+}
+
+.cm-fw-focus .cm-fw-dim .cm-fw-image,
+.cm-fw-focus .cm-fw-image {
+  opacity: 0.5;
+}
+
+.cm-fw-pos-adjectives { color: var(--pos-adjectives); }
+.cm-fw-pos-nouns { color: var(--pos-nouns); }
+.cm-fw-pos-adverbs { color: var(--pos-adverbs); }
+.cm-fw-pos-verbs { color: var(--pos-verbs); }
+.cm-fw-pos-conjunctions { color: var(--pos-conjunctions); }
+
+.cm-fw-style {
+  text-decoration: underline wavy;
+  text-decoration-color: var(--style-underline);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.cm-fw-style-custom {
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+}
+
+.cm-fw-borrowed {
+  color: var(--borrowed);
+  background: color-mix(in srgb, var(--borrowed) 10%, transparent);
+}
+
+.cm-tooltip.cm-tooltip-hover,
+.cm-tooltip {
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  font-family: var(--ui-font);
+  font-size: 12px;
+}
+
+.cm-fw-style-tip {
+  padding: 8px 10px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cm-fw-style-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.cm-fw-style-actions button {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 5px;
+  padding: 2px 8px;
+}
+
+.cm-tooltip-autocomplete ul li[aria-selected] {
+  background: var(--accent) !important;
+  color: var(--accent-fg) !important;
+}
+
+.cm-tooltip-autocomplete ul {
+  font-family: var(--ui-font) !important;
+  max-height: 16em !important;
+}
+
+.cm-tooltip-autocomplete ul li {
+  padding: 3px 10px !important;
+}
+
+/* ------------------------------------------------------------------ inline images */
+
+.cm-fw-image {
+  padding: 6px 0 12px;
+}
+
+.cm-fw-image img {
+  max-width: 100%;
+  max-height: 420px;
+  border-radius: 4px;
+  display: block;
+}
+
+.cm-fw-image-missing {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ search panel */
+
+#editor .cm-panels {
+  background: var(--sidebar-bg);
+  color: var(--fg);
+  border-color: var(--border) !important;
+  font-family: var(--ui-font);
+}
+
+#editor .cm-search {
+  padding: 8px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+}
+
+#editor .cm-search br {
+  flex-basis: 100%;
+  content: '';
+}
+
+#editor .cm-search input.cm-textfield {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  width: 220px;
+}
+
+#editor .cm-search .cm-button {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  background-image: none;
+  border-radius: 6px;
+  padding: 3px 9px;
+  color: var(--fg);
+}
+
+#editor .cm-search label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--fg-soft);
+}
+
+#editor .cm-search button[name='close'] {
+  border: 0;
+  background: none;
+  color: var(--fg-soft);
+  font-size: 16px;
+  position: absolute;
+  right: 10px;
+  top: 6px;
+}
+
+#editor .cm-searchMatch {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: 2px;
+}
+
+#editor .cm-searchMatch-selected {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+#editor .cm-selectionMatch {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}

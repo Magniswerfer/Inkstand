@@ -1,0 +1,52 @@
+/* Shared element styles for every template. Templates load after this and may override anything. */
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+[data-document] { word-wrap: break-word; }
+img, svg, video { max-width: 100%; height: auto; }
+figure { margin: 1.6em 0; text-align: center; }
+figure img { display: block; margin: 0 auto; }
+figcaption, .fw-caption { font-size: 0.85em; opacity: 0.7; margin-top: 0.6em; text-align: center; }
+.fw-table { overflow-x: auto; }
+table { border-collapse: collapse; margin: 1.4em 0; font-size: 0.92em; width: auto; }
+th, td { border-bottom: 1px solid rgba(128, 128, 128, 0.3); padding: 0.45em 0.9em; text-align: left; vertical-align: top; }
+th { font-weight: 600; border-bottom-width: 2px; }
+pre { overflow-x: auto; padding: 1em 1.2em; border-radius: 6px; background: rgba(128, 128, 128, 0.08); line-height: 1.45; font-size: 0.86em; }
+code { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; }
+:not(pre) > code { background: rgba(128, 128, 128, 0.12); padding: 0.1em 0.35em; border-radius: 4px; }
+pre code { font-size: 1em; background: none; padding: 0; }
+blockquote { margin: 1.4em 0; padding: 0 0 0 1.2em; border-left: 3px solid rgba(128, 128, 128, 0.35); opacity: 0.85; }
+hr { border: 0; border-top: 1px solid rgba(128, 128, 128, 0.35); margin: 2.4em auto; width: 40%; }
+mark { background: #fff0a0; color: inherit; padding: 0 0.1em; border-radius: 2px; }
+[data-theme='dark'] mark { background: #5c4f0f; }
+.task-list-item { list-style: none; }
+.task-list-item input { margin: 0 0.5em 0 -1.4em; vertical-align: middle; }
+ul.contains-task-list { padding-left: 1.6em; }
+.footnotes { font-size: 0.85em; margin-top: 3em; }
+.footnotes-sep { width: 25%; margin: 3em 0 1em; }
+.footnote-ref a, .footnote-backref { text-decoration: none; }
+.fw-math { overflow-x: auto; margin: 1.2em 0; }
+.fw-tag { opacity: 0.6; }
+.fw-wikilink-missing { opacity: 0.55; text-decoration-style: dotted; }
+.fw-missing-block { color: #c0392b; font-style: italic; }
+.fw-toc ul { list-style: none; padding-left: 0; }
+.fw-toc-2 { padding-left: 1.2em; } .fw-toc-3 { padding-left: 2.4em; } .fw-toc-4 { padding-left: 3.6em; } .fw-toc-5, .fw-toc-6 { padding-left: 4.8em; }
+dt { font-weight: 600; margin-top: 0.8em; }
+dd { margin-left: 1.5em; }
+
+/* Code highlighting (highlight.js classes) */
+.hljs-comment, .hljs-quote { color: #8a8a8a; font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-name, .hljs-tag { color: #a3489b; }
+.hljs-string, .hljs-title, .hljs-section, .hljs-attribute, .hljs-literal, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-addition { color: #3b8a3e; }
+.hljs-number, .hljs-symbol, .hljs-bullet, .hljs-link, .hljs-meta { color: #b25c1a; }
+.hljs-deletion, .hljs-variable { color: #c0392b; }
+.hljs-title.function_, .hljs-title.class_ { color: #2c6fb5; }
+[data-theme='dark'] .hljs-keyword, [data-theme='dark'] .hljs-selector-tag, [data-theme='dark'] .hljs-built_in, [data-theme='dark'] .hljs-name, [data-theme='dark'] .hljs-tag { color: #d38bd0; }
+[data-theme='dark'] .hljs-string, [data-theme='dark'] .hljs-title, [data-theme='dark'] .hljs-attribute, [data-theme='dark'] .hljs-type, [data-theme='dark'] .hljs-addition { color: #8fc98a; }
+[data-theme='dark'] .hljs-number, [data-theme='dark'] .hljs-symbol, [data-theme='dark'] .hljs-meta { color: #e19b61; }
+[data-theme='dark'] .hljs-title.function_, [data-theme='dark'] .hljs-title.class_ { color: #79aef0; }
+
+@media print {
+  h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+  pre, blockquote, figure, table, img { break-inside: avoid; }
+  a { color: inherit; }
+}

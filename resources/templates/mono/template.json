@@ -1,0 +1,11 @@
+{
+  "name": "Mono",
+  "description": "Typewriter style, as you see it while writing.",
+  "author": "FOSS Write",
+  "document": "document.html",
+  "header": "header.html",
+  "footer": "footer.html",
+  "title": "title.html",
+  "headerHeight": 60,
+  "footerHeight": 60
+}
