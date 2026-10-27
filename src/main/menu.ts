@@ -15,16 +15,37 @@ const item = (label: string, cmd: string, accelerator?: string, arg?: unknown): 
   click: () => send(cmd, arg)
 })
 
-function toggle(label: string, checked: boolean, patch: () => Partial<Settings>, accelerator?: string): MenuItemConstructorOptions {
-  return { label, type: 'checkbox', checked, accelerator, click: () => setSettings(patch()) }
+/** Checkmarks to refresh in place when settings change; replacing the whole menu bar is slow on macOS. */
+let checks: { id: string; get: (s: Settings) => boolean }[] = []
+
+function toggle(label: string, get: (s: Settings) => boolean, patch: () => Partial<Settings>, accelerator?: string): MenuItemConstructorOptions {
+  const id = `check-${checks.length}`
+  checks.push({ id, get })
+  return { id, label, type: 'checkbox', checked: get(getSettings()), accelerator, click: () => setSettings(patch()) }
 }
 
-function radio<const T>(label: string, value: T, current: T, patch: (v: T) => Partial<Settings>, accelerator?: string): MenuItemConstructorOptions {
-  return { label, type: 'radio', checked: value === current, accelerator, click: () => setSettings(patch(value)) }
+function radio<const T>(label: string, value: T, get: (s: Settings) => T, patch: (v: T) => Partial<Settings>, accelerator?: string): MenuItemConstructorOptions {
+  const id = `check-${checks.length}`
+  checks.push({ id, get: (s) => get(s) === value })
+  return { id, label, type: 'radio', checked: get(getSettings()) === value, accelerator, click: () => setSettings(patch(value)) }
+}
+
+/** Updates every checkmark from the current settings without rebuilding the menu. */
+export function syncMenu() {
+  const menu = Menu.getApplicationMenu()
+  if (!menu) return
+  const s = getSettings()
+  for (const c of checks) {
+    const item = menu.getMenuItemById(c.id)
+    const on = c.get(s)
+    // Checking one radio item unchecks its siblings; never uncheck radios directly.
+    if (item && item.checked !== on && (item.type !== 'radio' || on)) item.checked = on
+  }
 }
 
 export function buildMenu(openRecent: (path: string) => void) {
   const s = getSettings()
+  checks = []
   const sep: MenuItemConstructorOptions = { type: 'separator' }
 
   const template: MenuItemConstructorOptions[] = [
@@ -57,14 +78,17 @@ export function buildMenu(openRecent: (path: string) => void) {
         sep,
         item('Quick Open…', 'quickOpen', 'CmdOrCtrl+Shift+O'),
         item('Open…', 'open', 'CmdOrCtrl+O'),
-        {
-          label: 'Open Recent',
-          submenu: [
-            ...s.recent.slice(0, 15).map((p) => ({ label: p.replace(app.getPath('home'), '~'), click: () => openRecent(p) })),
-            sep,
-            { label: 'Clear Menu', click: () => setSettings({ recent: [] }) }
-          ]
-        },
+        // macOS keeps its own Open Recent list (fed by app.addRecentDocument), so it never needs a rebuild.
+        isMac
+          ? { label: 'Open Recent', role: 'recentDocuments', submenu: [{ label: 'Clear Menu', role: 'clearRecentDocuments' }] }
+          : {
+              label: 'Open Recent',
+              submenu: [
+                ...s.recent.slice(0, 15).map((p) => ({ label: p.replace(app.getPath('home'), '~'), click: () => openRecent(p) })),
+                sep,
+                { label: 'Clear Menu', click: () => setSettings({ recent: [] }) }
+              ]
+            },
         item('Add Library Folder…', 'addLocation'),
         sep,
         item('Save', 'save', 'CmdOrCtrl+S'),
@@ -164,7 +188,7 @@ export function buildMenu(openRecent: (path: string) => void) {
               submenu: [...s.authorship.authors.map((a) => item(a.name, 'pasteEdits', undefined, a.id)), ...(s.authorship.authors.length ? [sep] : []), item('New Author…', 'pasteEdits', undefined, 'new')]
             },
             sep,
-            toggle('Show Authors', s.authorship.showBorrowed, () => ({
+            toggle('Show Authors', (s) => s.authorship.showBorrowed, () => ({
               authorship: { ...getSettings().authorship, showBorrowed: !getSettings().authorship.showBorrowed }
             })),
             item('Authorship Settings…', 'preferences', undefined, 'authorship')
@@ -174,9 +198,9 @@ export function buildMenu(openRecent: (path: string) => void) {
           label: 'Speech',
           submenu: [item('Start Speaking', 'startSpeaking', 'CmdOrCtrl+Alt+Shift+S'), item('Stop Speaking', 'stopSpeaking', 'CmdOrCtrl+Alt+Shift+.')]
         },
-        toggle('Check Spelling While Typing', s.spellcheck, () => ({ spellcheck: !getSettings().spellcheck })),
-        toggle('Smart Quotes', s.smartQuotes, () => ({ smartQuotes: !getSettings().smartQuotes })),
-        toggle('Smart Dashes and Ellipses', s.smartDashes, () => ({ smartDashes: !getSettings().smartDashes })),
+        toggle('Check Spelling While Typing', (s) => s.spellcheck, () => ({ spellcheck: !getSettings().spellcheck })),
+        toggle('Smart Quotes', (s) => s.smartQuotes, () => ({ smartQuotes: !getSettings().smartQuotes })),
+        toggle('Smart Dashes and Ellipses', (s) => s.smartDashes, () => ({ smartDashes: !getSettings().smartDashes })),
         ...(isMac ? [] : [sep, item('Settings…', 'preferences', 'Ctrl+,')])
       ]
     },
@@ -262,10 +286,10 @@ export function buildMenu(openRecent: (path: string) => void) {
     {
       label: 'View',
       submenu: [
-        toggle('Library', s.showSidebar, () => ({ showSidebar: !getSettings().showSidebar }), 'CmdOrCtrl+Alt+1'),
-        toggle('Organizer', s.showOrganizer, () => ({ showOrganizer: !getSettings().showOrganizer }), 'CmdOrCtrl+Alt+0'),
-        toggle('Sort Bar', s.showSortBar, () => ({ showSortBar: !getSettings().showSortBar })),
-        toggle('Filter Bar', s.showFilterBar, () => ({ showFilterBar: !getSettings().showFilterBar })),
+        toggle('Library', (s) => s.showSidebar, () => ({ showSidebar: !getSettings().showSidebar }), 'CmdOrCtrl+Alt+1'),
+        toggle('Organizer', (s) => s.showOrganizer, () => ({ showOrganizer: !getSettings().showOrganizer }), 'CmdOrCtrl+Alt+0'),
+        toggle('Sort Bar', (s) => s.showSortBar, () => ({ showSortBar: !getSettings().showSortBar })),
+        toggle('Filter Bar', (s) => s.showFilterBar, () => ({ showFilterBar: !getSettings().showFilterBar })),
         {
           label: 'Sort Files By',
           submenu: [
@@ -277,27 +301,27 @@ export function buildMenu(openRecent: (path: string) => void) {
                 ['size', 'Size'],
                 ['kind', 'Kind']
               ] as const
-            ).map(([k, l]) => radio(l, k as Settings['librarySort'], s.librarySort, (v) => ({ librarySort: v }))),
+            ).map(([k, l]) => radio(l, k as Settings['librarySort'], (s) => s.librarySort, (v) => ({ librarySort: v }))),
             sep,
-            toggle('Reverse Order', s.librarySortReverse, () => ({ librarySortReverse: !getSettings().librarySortReverse }))
+            toggle('Reverse Order', (s) => s.librarySortReverse, () => ({ librarySortReverse: !getSettings().librarySortReverse }))
           ] as MenuItemConstructorOptions[]
         },
         sep,
-        toggle('Outline', s.showOutline, () => ({ showOutline: !getSettings().showOutline }), 'CmdOrCtrl+Alt+2'),
-        toggle('Preview', s.showPreview, () => ({ showPreview: !getSettings().showPreview }), 'CmdOrCtrl+R'),
+        toggle('Outline', (s) => s.showOutline, () => ({ showOutline: !getSettings().showOutline }), 'CmdOrCtrl+Alt+2'),
+        toggle('Preview', (s) => s.showPreview, () => ({ showPreview: !getSettings().showPreview }), 'CmdOrCtrl+R'),
         {
           label: 'Preview Options',
           submenu: [
-            radio('Split', 'split', s.previewMode, (v) => ({ showPreview: true, previewMode: v })),
-            radio('Full', 'full', s.previewMode, (v) => ({ showPreview: true, previewMode: v }), 'CmdOrCtrl+Shift+R'),
+            radio('Split', 'split', (s) => s.previewMode, (v) => ({ showPreview: true, previewMode: v })),
+            radio('Full', 'full', (s) => s.previewMode, (v) => ({ showPreview: true, previewMode: v }), 'CmdOrCtrl+Shift+R'),
             sep,
-            radio('Fit Width', 'width', s.previewZoom, (v) => ({ showPreview: true, previewZoom: v })),
-            radio('Fit Page', 'page', s.previewZoom, (v) => ({ showPreview: true, previewZoom: v })),
+            radio('Fit Width', 'width', (s) => s.previewZoom, (v) => ({ showPreview: true, previewZoom: v })),
+            radio('Fit Page', 'page', (s) => s.previewZoom, (v) => ({ showPreview: true, previewZoom: v })),
             sep,
             item('Reload Preview', 'reloadPreview')
           ] as MenuItemConstructorOptions[]
         },
-        toggle('Stats', s.showStats, () => ({ showStats: !getSettings().showStats }), 'CmdOrCtrl+Alt+3'),
+        toggle('Stats', (s) => s.showStats, () => ({ showStats: !getSettings().showStats }), 'CmdOrCtrl+Alt+3'),
         item('Command Palette…', 'palette', 'CmdOrCtrl+Shift+P'),
         sep,
         {
@@ -305,20 +329,20 @@ export function buildMenu(openRecent: (path: string) => void) {
           submenu: [
             item('Toggle Focus', 'toggleFocus', 'CmdOrCtrl+D'),
             sep,
-            radio('Off', 'off', s.focusMode, (v) => ({ focusMode: v })),
-            radio('Sentence', 'sentence', s.focusMode, (v) => ({ focusMode: v })),
-            radio('Paragraph', 'paragraph', s.focusMode, (v) => ({ focusMode: v })),
-            radio('Line', 'line', s.focusMode, (v) => ({ focusMode: v }))
+            radio('Off', 'off', (s) => s.focusMode, (v) => ({ focusMode: v })),
+            radio('Sentence', 'sentence', (s) => s.focusMode, (v) => ({ focusMode: v })),
+            radio('Paragraph', 'paragraph', (s) => s.focusMode, (v) => ({ focusMode: v })),
+            radio('Line', 'line', (s) => s.focusMode, (v) => ({ focusMode: v }))
           ] as MenuItemConstructorOptions[]
         },
-        toggle('Typewriter Mode', s.typewriter, () => ({ typewriter: !getSettings().typewriter }), 'CmdOrCtrl+Alt+Y'),
+        toggle('Typewriter Mode', (s) => s.typewriter, () => ({ typewriter: !getSettings().typewriter }), 'CmdOrCtrl+Alt+Y'),
         {
           label: 'Syntax Highlight',
           submenu: [
             item('Toggle All', 'toggleSyntax', 'CmdOrCtrl+Shift+Y'),
             sep,
             ...(['adjectives', 'nouns', 'adverbs', 'verbs', 'conjunctions'] as const).map((k) =>
-              toggle(k[0].toUpperCase() + k.slice(1), s.syntax[k], () => ({ syntax: { ...getSettings().syntax, [k]: !getSettings().syntax[k] } }))
+              toggle(k[0].toUpperCase() + k.slice(1), (s) => s.syntax[k], () => ({ syntax: { ...getSettings().syntax, [k]: !getSettings().syntax[k] } }))
             )
           ]
         },
@@ -328,7 +352,7 @@ export function buildMenu(openRecent: (path: string) => void) {
             item('Toggle All', 'toggleStyle', 'CmdOrCtrl+Shift+U'),
             sep,
             ...(['fillers', 'cliches', 'redundancies'] as const).map((k) =>
-              toggle(k === 'cliches' ? 'Clichés' : k[0].toUpperCase() + k.slice(1), s.styleCheck[k], () => ({
+              toggle(k === 'cliches' ? 'Clichés' : k[0].toUpperCase() + k.slice(1), (s) => s.styleCheck[k], () => ({
                 styleCheck: { ...getSettings().styleCheck, [k]: !getSettings().styleCheck[k] }
               }))
             ),
@@ -340,36 +364,36 @@ export function buildMenu(openRecent: (path: string) => void) {
         {
           label: 'Theme',
           submenu: [
-            radio('Match System', 'system', s.theme, (v) => ({ theme: v })),
-            radio('Light', 'light', s.theme, (v) => ({ theme: v })),
-            radio('Dark', 'dark', s.theme, (v) => ({ theme: v }), 'CmdOrCtrl+Alt+Shift+D')
+            radio('Match System', 'system', (s) => s.theme, (v) => ({ theme: v })),
+            radio('Light', 'light', (s) => s.theme, (v) => ({ theme: v })),
+            radio('Dark', 'dark', (s) => s.theme, (v) => ({ theme: v }), 'CmdOrCtrl+Alt+Shift+D')
           ] as MenuItemConstructorOptions[]
         },
         {
           label: 'Font',
           submenu: [
-            radio('Mono', 'mono', s.font, (v) => ({ font: v })),
-            radio('Duo', 'duo', s.font, (v) => ({ font: v })),
-            radio('Sans', 'sans', s.font, (v) => ({ font: v })),
-            radio('Serif', 'serif', s.font, (v) => ({ font: v })),
-            radio('Custom', 'custom', s.font, (v) => ({ font: v }))
+            radio('Mono', 'mono', (s) => s.font, (v) => ({ font: v })),
+            radio('Duo', 'duo', (s) => s.font, (v) => ({ font: v })),
+            radio('Sans', 'sans', (s) => s.font, (v) => ({ font: v })),
+            radio('Serif', 'serif', (s) => s.font, (v) => ({ font: v })),
+            radio('Custom', 'custom', (s) => s.font, (v) => ({ font: v }))
           ] as MenuItemConstructorOptions[]
         },
         {
           label: 'Line Width',
           submenu: [
-            radio('Narrow', 'narrow', s.lineWidth, (v) => ({ lineWidth: v })),
-            radio('Medium', 'medium', s.lineWidth, (v) => ({ lineWidth: v })),
-            radio('Wide', 'wide', s.lineWidth, (v) => ({ lineWidth: v })),
-            radio('Full Width', 'full', s.lineWidth, (v) => ({ lineWidth: v }))
+            radio('Narrow', 'narrow', (s) => s.lineWidth, (v) => ({ lineWidth: v })),
+            radio('Medium', 'medium', (s) => s.lineWidth, (v) => ({ lineWidth: v })),
+            radio('Wide', 'wide', (s) => s.lineWidth, (v) => ({ lineWidth: v })),
+            radio('Full Width', 'full', (s) => s.lineWidth, (v) => ({ lineWidth: v }))
           ] as MenuItemConstructorOptions[]
         },
         {
           label: 'Markdown Markup',
           submenu: [
-            radio('Show', 'show', s.markup, (v) => ({ markup: v })),
-            radio('Dim', 'dim', s.markup, (v) => ({ markup: v })),
-            radio('Hide When Not Editing', 'hide', s.markup, (v) => ({ markup: v }))
+            radio('Show', 'show', (s) => s.markup, (v) => ({ markup: v })),
+            radio('Dim', 'dim', (s) => s.markup, (v) => ({ markup: v })),
+            radio('Hide When Not Editing', 'hide', (s) => s.markup, (v) => ({ markup: v }))
           ] as MenuItemConstructorOptions[]
         },
         { label: 'Bigger', accelerator: 'CmdOrCtrl+=', click: () => setSettings({ fontSize: Math.min(40, getSettings().fontSize + 1) }) },

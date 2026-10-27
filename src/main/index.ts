@@ -13,7 +13,7 @@ import { getAuthorship, listVersions, moveVersions, readVersion, saveVersion, se
 import { publish } from './publish'
 import { resourcePath } from './paths'
 import { handleUrl, SCHEME, type UrlHost } from './urlcommands'
-import { buildMenu } from './menu'
+import { buildMenu, syncMenu } from './menu'
 
 // Inkstand was called FOSS Write before its first release: carry its data over once.
 migrateUserData()
@@ -373,11 +373,13 @@ app.whenReady().then(async () => {
 
   ipcMain.on('doc:state', (e, next: { path: string | null; dirty: boolean; title: string }) => {
     const s = state(e.sender)
+    const opened = next.path && next.path !== s.path
     Object.assign(s, next)
     const win = BrowserWindow.fromWebContents(e.sender)
     if (!win) return
     win.setTitle(next.title)
     win.setDocumentEdited(next.dirty)
+    if (opened) app.addRecentDocument(next.path!)
     if (process.platform === 'darwin') win.setRepresentedFilename(next.path ?? '')
   })
   handle('window:new', (_e, path?: string) => {
@@ -466,18 +468,17 @@ app.whenReady().then(async () => {
   onSettingsChanged((next, prev) => {
     if (next.theme !== prev.theme) nativeTheme.themeSource = next.theme
   })
-  // Rebuilding the menu bar is slow on macOS; only do it when a menu checkmark or list changed.
-  const MENU_KEYS: (keyof Settings)[] = [
-    'recent', 'showSidebar', 'showOutline', 'showPreview', 'showStats', 'focusMode', 'typewriter', 'syntax',
-    'styleCheck', 'theme', 'font', 'lineWidth', 'markup', 'spellcheck', 'smartQuotes', 'smartDashes', 'authorship',
-    'showOrganizer', 'showSortBar', 'showFilterBar', 'librarySort', 'librarySortReverse', 'previewMode', 'previewZoom'
-  ]
+  // Replacing the menu bar is slow on macOS (and logs warnings), so only rebuild it when its lists
+  // change: recent files and authors. Checkmarks are updated in place.
   buildMenu(openPath)
   let menuTimer: NodeJS.Timeout | undefined
   onSettingsChanged((next, prev) => {
-    if (!MENU_KEYS.some((k) => JSON.stringify(next[k]) !== JSON.stringify(prev[k]))) return
-    clearTimeout(menuTimer)
-    menuTimer = setTimeout(() => buildMenu(openPath), 50)
+    const recent = (x: Settings) => (process.platform === 'darwin' ? [] : x.recent.slice(0, 15))
+    const lists = (x: Settings) => JSON.stringify([recent(x), x.authorship.author, x.authorship.authors.map((a) => [a.id, a.name])])
+    if (lists(next) !== lists(prev)) {
+      clearTimeout(menuTimer)
+      menuTimer = setTimeout(() => buildMenu(openPath), 50)
+    } else syncMenu()
   })
 
   // Tests drive URL commands directly instead of through the OS.
