@@ -40,7 +40,8 @@ export class Preview {
   onSettings(prev: Settings) {
     const s = this.app.settings
     if (prev.previewTemplate !== s.previewTemplate || prev.theme !== s.theme || prev.previewZoom !== s.previewZoom || prev.pdfPaper !== s.pdfPaper) this.loadedKey = ''
-    if (s.showPreview && (!prev.showPreview || this.loadedKey === '')) this.schedule(true)
+    const content = JSON.stringify(prev.markdown) !== JSON.stringify(s.markdown) || JSON.stringify(prev.links) !== JSON.stringify(s.links)
+    if (s.showPreview && (!prev.showPreview || this.loadedKey === '' || content)) this.schedule(true)
   }
 
   /** Re-reads templates from disk and redraws, for when you're editing a template. */

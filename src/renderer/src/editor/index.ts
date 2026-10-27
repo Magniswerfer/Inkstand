@@ -1,5 +1,5 @@
 import { closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
-import { defaultKeymap, history, historyKeymap, indentLess, indentMore, insertTab, redo, undo } from '@codemirror/commands'
+import { defaultKeymap, history, historyKeymap, indentLess, indentMore, redo, undo } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { syntaxHighlighting, indentUnit } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
@@ -57,7 +57,8 @@ export class Editor {
     images: new Compartment(),
     authorship: new Compartment(),
     brackets: new Compartment(),
-    attrs: new Compartment()
+    attrs: new Compartment(),
+    indent: new Compartment()
   }
   private settings: Settings
 
@@ -82,6 +83,7 @@ export class Editor {
       images: inlineImages(s.inlineImages, (src) => this.host.resolveImage(src)),
       authorship: authorshipDisplay(s.authorship.enabled && s.authorship.showBorrowed, s.authorship.authors),
       brackets: s.autoPair ? [closeBrackets(), keymap.of(closeBracketsKeymap)] : [],
+      indent: [indentUnit.of(s.indent.useTabs ? '\t' : ' '.repeat(s.indent.width)), EditorState.tabSize.of(s.indent.width)],
       attrs: EditorView.contentAttributes.of({ spellcheck: String(s.spellcheck), autocorrect: 'off', autocapitalize: 'sentences', 'aria-label': 'Document' })
     } satisfies Record<keyof Editor['c'], Extension>
   }
@@ -97,8 +99,7 @@ export class Editor {
       highlightSpecialChars(),
       highlightSelectionMatches(),
       EditorView.lineWrapping,
-      indentUnit.of('    '),
-      EditorState.tabSize.of(4),
+
       markdown({ base: markdownLanguage, codeLanguages: languages, addKeymap: true }),
       syntaxHighlighting(highlightStyle),
       search({ top: true }),
@@ -112,7 +113,8 @@ export class Editor {
           run: (v) => {
             const line = v.state.doc.lineAt(v.state.selection.main.head)
             if (listLine.test(line.text) || !v.state.selection.main.empty) return indentMore(v)
-            return insertTab(v)
+            v.dispatch(v.state.replaceSelection(v.state.facet(indentUnit)), { scrollIntoView: true, userEvent: 'input' })
+            return true
           },
           shift: indentLess
         },
@@ -174,7 +176,8 @@ export class Editor {
       ['images', ['inlineImages']],
       ['authorship', ['authorship']],
       ['brackets', ['autoPair']],
-      ['attrs', ['spellcheck']]
+      ['attrs', ['spellcheck']],
+      ['indent', ['indent']]
     ]
     for (const [c, keys] of map) if (changed(keys)) effects.push(this.c[c].reconfigure(conf[c]))
     if (effects.length) this.view.dispatch({ effects })

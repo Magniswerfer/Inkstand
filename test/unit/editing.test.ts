@@ -78,3 +78,21 @@ describe('speech language', () => {
     expect(guessLanguage('Das ist nicht gut und schön.')).toBe('de')
   })
 })
+
+import { separateLines } from '../../src/renderer/src/markdown/render'
+import { relativePath } from '@shared/text'
+
+describe('markdown settings', () => {
+  it('turns single returns into paragraphs, but not in lists or code', () => {
+    expect(separateLines('One\nTwo\n- a\n- b\n```\nx\ny\n```')).toBe('One\n\nTwo\n- a\n- b\n```\nx\ny\n```')
+  })
+  it('can leave dollar signs alone', () => {
+    const plain = createMarkdown({ math: false }).render('It costs $5 and $10.')
+    expect(plain).not.toContain('katex')
+    expect(createMarkdown().render('Energy is $E=mc^2$.')).toContain('katex')
+  })
+  it('builds relative link paths', () => {
+    expect(relativePath('/lib/Notes', '/lib/Drafts/Idea')).toBe('../Drafts/Idea')
+    expect(relativePath('/lib', '/lib/Notes/Idea')).toBe('Notes/Idea')
+  })
+})

@@ -84,3 +84,12 @@ export function splitAuthorship(text: string): { body: string; block: string | n
   if (!m) return { body: text, block: null }
   return { body: text.slice(0, m.index) + '\n', block: m[1] }
 }
+
+/** A path from `fromDir` to `to`, using ../ where needed. */
+export function relativePath(fromDir: string, to: string): string {
+  const a = fromDir.split('/').filter(Boolean)
+  const b = to.split('/').filter(Boolean)
+  let i = 0
+  while (i < a.length && i < b.length && a[i] === b[i]) i++
+  return [...a.slice(i).map(() => '..'), ...b.slice(i)].join('/')
+}

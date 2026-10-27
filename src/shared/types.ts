@@ -80,6 +80,19 @@ export interface Settings {
     custom: CustomPattern[]
     ignored: string[]
   }
+  markdown: {
+    /** Every line break starts a new paragraph, for writing one paragraph per line. */
+    singleReturnParagraphs: boolean
+    /** $…$ and $$…$$ math; off keeps prices like $5 as plain text. */
+    math: boolean
+  }
+  indent: { useTabs: boolean; width: number }
+  links: {
+    /** How [[wiki links]] find their document: by name anywhere in the library, or as a path from this document. */
+    wikiResolve: 'name' | 'relative'
+    /** What link completion inserts. */
+    wikiInsert: 'name' | 'path'
+  }
   smartQuotes: boolean
   smartDashes: boolean
   autoPair: boolean
@@ -145,6 +158,9 @@ export const DEFAULT_SETTINGS: Settings = {
   typewriter: false,
   syntax: { adjectives: false, nouns: false, adverbs: false, verbs: false, conjunctions: false },
   styleCheck: { fillers: false, cliches: false, redundancies: false, custom: [], ignored: [] },
+  markdown: { singleReturnParagraphs: false, math: true },
+  indent: { useTabs: false, width: 4 },
+  links: { wikiResolve: 'name', wikiInsert: 'name' },
   smartQuotes: true,
   smartDashes: true,
   autoPair: true,

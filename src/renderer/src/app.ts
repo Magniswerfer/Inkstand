@@ -1,5 +1,5 @@
 import type { DirEntry, Settings } from '@shared/types'
-import { extractTags, extractTitle, fileNameFromTitle, isTextFile } from '@shared/text'
+import { extractTags, extractTitle, fileNameFromTitle, isTextFile, relativePath } from '@shared/text'
 import { Editor } from './editor'
 import { markAs, type Span } from './editor/authorship'
 import { parseAuthorship, sha256, writeAuthorship, type AuthorEntry } from '@shared/authorship-file'
@@ -440,8 +440,12 @@ export class App {
 
   // ---------------------------------------------------------------- editor host
 
+  /** Documents for [[ completion: what to show, and what to insert (a name, or a path from here). */
   documents() {
-    return this.files.filter((f) => isTextFile(f.name)).map((f) => ({ title: stripExt(f.name), name: f.name }))
+    const byPath = this.settings.links.wikiInsert === 'path' && this.docDir
+    return this.files
+      .filter((f) => isTextFile(f.name) && f.path !== this.path)
+      .map((f) => ({ label: stripExt(f.name), detail: dirname(f.path).replace(/^\/Users\/[^/]+/, '~'), insert: byPath ? relativePath(this.docDir!, stripExt(f.path)) : stripExt(f.name) }))
   }
 
   async relativeFiles(): Promise<string[]> {
@@ -468,8 +472,16 @@ export class App {
   }
 
   resolveWiki(target: string): string | null {
-    const t = target.toLowerCase().replace(/#.*$/, '')
-    const candidates = this.files.filter((f) => isTextFile(f.name) && (stripExt(f.name).toLowerCase() === t || stripExt(f.path).toLowerCase().endsWith('/' + t)))
+    const t = target.replace(/#.*$/, '').trim()
+    const texts = this.files.filter((f) => isTextFile(f.name))
+    if (this.settings.links.wikiResolve === 'relative' && this.path) {
+      // A path from this document's folder, with or without the extension.
+      const base = resolvePath(this.path, './' + t)
+      const hit = base && texts.find((f) => f.path === base || stripExt(f.path) === base)
+      if (hit) return hit.path
+    }
+    const lower = t.toLowerCase()
+    const candidates = texts.filter((f) => stripExt(f.name).toLowerCase() === lower || stripExt(f.path).toLowerCase().endsWith('/' + lower))
     if (!candidates.length) return null
     const dir = this.docDir
     return (candidates.find((c) => dir && dirname(c.path) === dir) ?? candidates[0]).path
@@ -558,6 +570,8 @@ export class App {
   renderContext(): RenderContext {
     return {
       docPath: this.path,
+      singleReturnParagraphs: this.settings.markdown.singleReturnParagraphs,
+      math: this.settings.markdown.math,
       readFile: (p) => api.readFile(p),
       fileUrl: (p) => this.fileUrl(p),
       resolveWiki: (t) => this.resolveWiki(t)

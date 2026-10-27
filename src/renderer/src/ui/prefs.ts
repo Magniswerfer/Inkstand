@@ -74,6 +74,28 @@ export function openPreferences(app: App, initialTab = 'general') {
           row('Assets folder', text('assetsFolder'), 'Dropped files from elsewhere are copied here, next to the document.')
         )
     ],
+    markdown: [
+      'Markdown',
+      () => {
+        const nested = <K extends 'markdown' | 'indent' | 'links'>(key: K, field: keyof Settings[K], options: [unknown, string][]) => {
+          const el = h('select', { onchange: () => set({ [key]: { ...s()[key], [field]: options[el.selectedIndex][0] } } as Partial<Settings>) }, options.map(([v, l]) => h('option', { selected: s()[key][field] === v }, l)))
+          return el
+        }
+        return h(
+          'div',
+          null,
+          h('h4', null, 'Paragraphs'),
+          row('Line breaks', nested('markdown', 'singleReturnParagraphs', [[false, 'A blank line starts a paragraph'], [true, 'Single return starts a new paragraph']]), 'Affects preview and export; your text is never changed.'),
+          row('Math', nested('markdown', 'math', [[true, '$…$ and $$…$$ are math'], [false, 'Dollar signs are plain text']])),
+          h('h4', null, 'Indentation'),
+          row('Indent with', nested('indent', 'useTabs', [[false, 'Spaces'], [true, 'Tabs']])),
+          row('Indent width', nested('indent', 'width', [[2, '2'], [4, '4'], [8, '8']])),
+          h('h4', null, 'Library paths & links'),
+          row('Wiki links find documents', nested('links', 'wikiResolve', [['name', 'By name, anywhere in the library'], ['relative', 'By path from the current document']])),
+          row('Link completion inserts', nested('links', 'wikiInsert', [['name', 'The document name'], ['path', 'A path from the current document']]), 'Paths keep links unambiguous when names repeat; names survive moving documents around.')
+        )
+      }
+    ],
     style: ['Syntax & Style', () => styleTab(app)],
     templates: ['Templates', () => templatesTab(app)],
     library: [

@@ -15,7 +15,7 @@ export function onSettingsChanged(fn: Listener) {
 function merge(base: Settings, patch: Partial<Settings>): Settings {
   const out = { ...base, ...patch } as Settings
   // Nested objects are merged one level deep so older settings files pick up new keys.
-  for (const key of ['syntax', 'styleCheck', 'authorship', 'versions'] as const) {
+  for (const key of ['syntax', 'styleCheck', 'authorship', 'versions', 'markdown', 'indent', 'links'] as const) {
     if (patch[key]) (out as any)[key] = { ...(base as any)[key], ...(patch as any)[key] }
   }
   return out

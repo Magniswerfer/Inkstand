@@ -4,7 +4,7 @@ import type { Extension } from '@codemirror/state'
 
 export interface CompletionSource {
   /** Library documents, for wiki links. */
-  documents(): { title: string; name: string }[]
+  documents(): { label: string; detail: string; insert: string }[]
   /** Files relative to the current document's folder, for content blocks. */
   relativeFiles(): Promise<string[]>
   tags(): string[]
@@ -14,12 +14,8 @@ export function completions(src: CompletionSource): Extension {
   const wiki = (ctx: CompletionContext): CompletionResult | null => {
     const m = ctx.matchBefore(/\[\[[^\]\n]*/)
     if (!m) return null
-    const seen = new Set<string>()
-    const options = src
-      .documents()
-      .map((d) => d.name.replace(/\.[^.]+$/, ''))
-      .filter((n) => !seen.has(n) && seen.add(n))
-      .map((label) => ({ label, type: 'file', apply: label + (ctx.state.sliceDoc(ctx.pos, ctx.pos + 2) === ']]' ? '' : ']]') }))
+    const close = ctx.state.sliceDoc(ctx.pos, ctx.pos + 2) === ']]' ? '' : ']]'
+    const options = src.documents().map((d) => ({ label: d.label, detail: d.detail, type: 'file', apply: d.insert + close }))
     return { from: m.from + 2, options, validFor: /^[^\]\n]*$/ }
   }
 

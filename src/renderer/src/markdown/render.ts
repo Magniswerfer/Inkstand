@@ -16,6 +16,8 @@ import { CONTENT_BLOCK_RE } from '../editor/markup'
 
 export interface RenderContext {
   docPath: string | null
+  singleReturnParagraphs?: boolean
+  math?: boolean
   readFile(path: string): Promise<string>
   /** Turns a relative or absolute local path into a URL the preview can load. */
   fileUrl(path: string): string
@@ -333,7 +335,24 @@ function sourceLines(md: MD, lineOffset: () => number) {
 let wikiResolver: (t: string) => string | null = () => null
 let lineOffset = 0
 
-export function createMarkdown() {
+/**
+ * For "single return starts a new paragraph": puts a blank line between adjacent lines of prose,
+ * leaving code, lists, quotes, tables, headings and HTML alone.
+ */
+export function separateLines(md: string): string {
+  const lines = md.split('\n')
+  const out: string[] = []
+  let fence = false
+  const prose = (l: string) => l.trim() !== '' && !/^\s*([-*+]\s|\d+[.)]\s|>|#{1,6}\s|\||<|\s{4}|\[\^?[^\]]+\]:|:\s)/.test(l)
+  lines.forEach((line, i) => {
+    if (/^\s*(```|~~~)/.test(line)) fence = !fence
+    out.push(line)
+    if (!fence && prose(line) && i + 1 < lines.length && prose(lines[i + 1])) out.push('')
+  })
+  return out.join('\n')
+}
+
+export function createMarkdown(opts: { math?: boolean } = {}) {
   const md: MD = new MarkdownIt({
     html: true,
     linkify: true,
@@ -352,7 +371,7 @@ export function createMarkdown() {
   })
   md.use(footnote).use(taskLists, { enabled: false, label: true }).use(deflist).use(mark).use(sub).use(sup)
   md.use(anchor, { slugify: (s: string) => s.toLowerCase().trim().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') })
-  md.use(mathPlugin)
+  if (opts.math !== false) md.use(mathPlugin)
   md.use((m) => wikiPlugin(m, () => wikiResolver))
   md.use(tagPlugin)
   md.use(tocPlugin)
@@ -362,6 +381,7 @@ export function createMarkdown() {
 }
 
 const md = createMarkdown()
+const mdNoMath = createMarkdown({ math: false })
 
 const purifyConfig = {
   ADD_TAGS: ['math', 'semantics', 'annotation', 'mrow', 'mi', 'mo', 'mn', 'msup', 'msub', 'mfrac', 'msqrt', 'mtext', 'mspace', 'mtable', 'mtr', 'mtd', 'mover', 'munder', 'mstyle', 'mroot', 'mpadded', 'mphantom', 'menclose', 'msubsup', 'munderover'],
@@ -388,10 +408,11 @@ export async function renderMarkdown(source: string, ctx: RenderContext): Promis
   wikiResolver = ctx.resolveWiki
   // Line numbers only match the editor when no content block changed the line count.
   lineOffset = source.slice(0, offset).split('\n').length - 1
-  const raw = md.render(expanded)
+  const source2 = ctx.singleReturnParagraphs ? separateLines(expanded) : expanded
+  const raw = (ctx.math === false ? mdNoMath : md).render(source2)
   const html = DOMPurify.sanitize(rewriteUrls(raw, ctx), purifyConfig) as string
   const firstHeading = /<h1[^>]*>([\s\S]*?)<\/h1>/.exec(html)?.[1]?.replace(/<[^>]+>/g, '')
-  return { html, meta, title: meta.title || firstHeading || '', markdown: expanded }
+  return { html, meta, title: meta.title || firstHeading || '', markdown: source2 }
 }
 
 export function markdownTokens(src: string) {
