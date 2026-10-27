@@ -6,7 +6,7 @@ export type FocusMode = 'off' | 'sentence' | 'paragraph' | 'line'
 export type MarkupMode = 'dim' | 'hide' | 'show'
 export type LineWidth = 'narrow' | 'medium' | 'wide' | 'full'
 export type StatMetric = 'words' | 'characters' | 'sentences' | 'paragraphs' | 'readingTime' | 'pages'
-export type SortOrder = 'modified' | 'name' | 'created'
+export type SortOrder = 'modified' | 'name' | 'created' | 'size' | 'kind'
 
 export interface CustomPattern {
   id: string
@@ -30,10 +30,23 @@ export interface Author {
 /** [from, to, authorId]: a run of text not written by you. */
 export type Span = [number, number, string]
 
+export type SmartField = 'search' | 'ancestorPath' | 'parentPath' | 'dateCreated' | 'dateModified' | 'kind' | 'extension'
+export type SmartOp = 'matches' | 'is' | 'isNot' | 'inPast' | 'notInPast' | 'after' | 'before'
+
+/** One condition of a smart folder, e.g. "Date modified is in the past 7 days". */
+export interface SmartRule {
+  field: SmartField
+  op: SmartOp
+  value: string
+}
+
 export interface SmartFolder {
   id: string
   name: string
+  /** Older smart folders were a single search; kept for compatibility. */
   query: string
+  rules?: SmartRule[]
+  match?: 'all' | 'any'
 }
 
 export interface PublishAccount {
@@ -88,6 +101,10 @@ export interface Settings {
   pdfPaper: 'A4' | 'Letter' | 'Legal' | 'A5'
   libraryLocations: string[]
   librarySort: SortOrder
+  librarySortReverse: boolean
+  showOrganizer: boolean
+  showSortBar: boolean
+  showFilterBar: boolean
   showExtensions: boolean
   favorites: string[]
   recent: string[]
@@ -145,6 +162,10 @@ export const DEFAULT_SETTINGS: Settings = {
   pdfPaper: 'A4',
   libraryLocations: [],
   librarySort: 'modified',
+  librarySortReverse: false,
+  showOrganizer: true,
+  showSortBar: true,
+  showFilterBar: true,
   showExtensions: false,
   favorites: [],
   recent: [],
@@ -264,6 +285,7 @@ export interface FossWriteApi {
   stat(path: string): Promise<DirEntry | null>
   listDir(dir: string): Promise<FileSummary[]>
   listAllFiles(root: string): Promise<DirEntry[]>
+  listFolders(root: string): Promise<string[]>
   mkdir(path: string): Promise<void>
   rename(from: string, to: string): Promise<void>
   copyFile(from: string, to: string): Promise<void>
@@ -271,6 +293,7 @@ export interface FossWriteApi {
   reveal(path: string): Promise<void>
   openExternal(url: string): Promise<void>
   search(roots: string[], query: string): Promise<SearchHit[]>
+  smartFolder(roots: string[], folder: SmartFolder): Promise<SearchHit[]>
   tags(roots: string[]): Promise<{ tag: string; count: number }[]>
   watchFile(path: string | null): Promise<void>
   watchLibrary(dirs: string[]): Promise<void>

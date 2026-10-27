@@ -26,6 +26,7 @@ import { openVersions } from './ui/versions'
 import { openExport, quickExport, copyAs, exportTo } from './ui/export'
 import { openPublish } from './ui/publish'
 import { openCheatsheet, guideText } from './ui/help'
+import { openGetInfo } from './ui/info'
 import { applyAppearance, onMetrics } from './appearance'
 
 const api = window.api
@@ -385,6 +386,25 @@ export class App {
     }
   }
 
+  /** Moves the open document on disk without reloading it. */
+  async relocate(to: string) {
+    const from = this.path
+    if (!from || from === to) return
+    await this.save()
+    api.watchFile(null)
+    // Point at the new path first, so the watcher doesn't mistake the move for a deletion.
+    this.path = to
+    try {
+      await api.rename(from, to)
+    } catch (e) {
+      this.path = from
+      api.watchFile(from)
+      throw e
+    }
+    api.watchFile(to)
+    this.updateState()
+  }
+
   async rename() {
     if (!this.path) {
       await this.save({ as: true })
@@ -396,11 +416,7 @@ export class App {
     if (!next || next === name) return
     const target = dirname(this.path) + '/' + (/\.[^.]+$/.test(next) ? next : next + ext)
     try {
-      await this.save()
-      await api.rename(this.path, target)
-      this.path = target
-      api.watchFile(target)
-      this.updateState()
+      await this.relocate(target)
       this.library.refresh()
     } catch (e: any) {
       toast(e.message ?? String(e), { error: true })
@@ -410,7 +426,12 @@ export class App {
   async refreshFiles() {
     const all = await Promise.all(this.settings.libraryLocations.map((l) => api.listAllFiles(l).catch(() => [])))
     this.files = all.flat()
-    api.tags(this.settings.libraryLocations).then((t) => (this.tagList = t.map((x) => x.tag)))
+    api.tags(this.settings.libraryLocations).then((t) => {
+      const next = t.map((x) => x.tag)
+      if (next.join() === this.tagList.join()) return
+      this.tagList = next
+      this.library.refresh()
+    })
     api.watchLibrary(this.settings.libraryLocations)
     this.library.refresh()
   }
@@ -607,6 +628,17 @@ export class App {
       this.library.refresh()
     })
     add('reveal', 'Reveal in Finder', () => this.path && api.reveal(this.path))
+    add('getInfo', 'Get Info', () => (this.path ? openGetInfo(this, this.path) : toast('Save the document first.')))
+    add('moveTo', 'Move To…', () => (this.path ? this.library.moveDocument(this.path) : toast('Save the document first.')))
+    add('showInLibrary', 'Show in Library', () => {
+      if (!s().showSidebar) this.set({ showSidebar: true })
+      this.library.showCurrent()
+    })
+    add('filter', 'Filter Library', () => {
+      if (!s().showSidebar) this.set({ showSidebar: true })
+      this.library.focusFilter()
+    })
+    add('toggleOrganizer', 'Toggle Organizer', () => this.set({ showOrganizer: !s().showOrganizer }))
     add('saveVersion', 'Save Version…', async () => {
       if (!this.path) await this.save()
       if (!this.path) return

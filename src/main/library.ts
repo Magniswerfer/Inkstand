@@ -1,6 +1,7 @@
 import { promises as fs, watch, type FSWatcher } from 'node:fs'
-import { join, basename } from 'node:path'
-import type { DirEntry, FileSummary, SearchHit } from '@shared/types'
+import { join, basename, dirname, extname } from 'node:path'
+import type { DirEntry, FileSummary, SearchHit, SmartFolder, SmartRule } from '@shared/types'
+import { matchQuery, parseQuery, queryTerms, type Node } from '@shared/query'
 import { extractExcerpt, extractTags, extractTitle, isTextFile, splitAuthorship } from '@shared/text'
 
 const SKIP = new Set(['node_modules', '.git', '.Trash', '.obsidian'])
@@ -37,7 +38,7 @@ export async function listDir(dir: string): Promise<FileSummary[]> {
       if (!isTextFile(name)) return null
       const text = e.size > MAX_READ ? '' : await readText(e.path)
       const base = name.replace(/\.[^.]+$/, '')
-      return { ...e, title: extractTitle(text, base) || base, excerpt: extractExcerpt(text), tags: extractTags(text) }
+      return { ...e, title: extractTitle(text, base) || base, excerpt: extractExcerpt(text, 160, true), tags: extractTags(text) }
     })
   )
   return out.filter((x): x is FileSummary => x !== null)
@@ -63,50 +64,102 @@ export async function listAllFiles(root: string, includeAll = false): Promise<Di
   return out
 }
 
-interface Query {
-  terms: string[]
-  phrases: string[]
-  tags: string[]
-  exclude: string[]
-}
-
-export function parseQuery(q: string): Query {
-  const query: Query = { terms: [], phrases: [], tags: [], exclude: [] }
-  for (const m of q.matchAll(/(-?)"([^"]+)"|(\S+)/g)) {
-    if (m[2]) (m[1] ? query.exclude : query.phrases).push(m[2].toLowerCase())
-    else if (m[3].startsWith('#') && m[3].length > 1) query.tags.push(m[3].slice(1).toLowerCase())
-    else if (m[3].startsWith('-') && m[3].length > 1) query.exclude.push(m[3].slice(1).toLowerCase())
-    else query.terms.push(m[3].toLowerCase())
-  }
-  return query
-}
-
-export function matches(text: string, name: string, q: Query): boolean {
-  const hay = (name + '\n' + text).toLowerCase()
-  if (q.exclude.some((t) => hay.includes(t))) return false
-  if (![...q.terms, ...q.phrases].every((t) => hay.includes(t))) return false
-  if (q.tags.length) {
-    const tags = extractTags(text)
-    if (!q.tags.every((t) => tags.some((x) => x === t || x.startsWith(t + '/')))) return false
-  }
-  return true
+function hitFor(f: DirEntry, text: string, node: Node): SearchHit {
+  const terms = queryTerms(node)
+  const lines = text.split('\n')
+  let line = terms.length ? lines.findIndex((l) => terms.some((n) => l.toLowerCase().includes(n))) : -1
+  if (line < 0) line = 0
+  return { path: f.path, name: f.name, title: extractTitle(text, f.name), mtime: f.mtime, line, snippet: lines[line]?.trim().slice(0, 200) ?? '' }
 }
 
 export async function search(roots: string[], raw: string): Promise<SearchHit[]> {
-  const q = parseQuery(raw)
-  if (!q.terms.length && !q.phrases.length && !q.tags.length) return []
-  const needles = [...q.phrases, ...q.terms, ...q.tags.map((t) => '#' + t)]
+  const node = parseQuery(raw)
+  if (node.t === 'all') return []
   const hits: SearchHit[] = []
   for (const root of roots) {
-    for (const f of await listAllFiles(root)) {
-      if (f.size > MAX_READ) continue
-      const text = await readText(f.path)
-      if (!matches(text, f.name, q)) continue
-      const lines = text.split('\n')
-      let line = lines.findIndex((l) => needles.some((n) => l.toLowerCase().includes(n)))
-      if (line < 0) line = 0
-      hits.push({ path: f.path, name: f.name, title: extractTitle(text, f.name), mtime: f.mtime, line, snippet: lines[line]?.trim().slice(0, 200) ?? '' })
+    for (const f of await listAllFiles(root, true)) {
+      const text = isTextFile(f.name) && f.size <= MAX_READ ? await readText(f.path) : ''
+      if (!matchQuery(node, { name: f.name, text })) continue
+      hits.push(hitFor(f, text, node))
       if (hits.length >= 500) return hits
+    }
+  }
+  return hits.sort((a, b) => b.mtime - a.mtime)
+}
+
+/** Every file and folder below the roots, for smart folder rules about kinds and paths. */
+export async function walkAll(root: string): Promise<DirEntry[]> {
+  const out: DirEntry[] = []
+  async function walk(dir: string, depth: number) {
+    if (depth > 12 || out.length > 20000) return
+    for (const it of await fs.readdir(dir, { withFileTypes: true }).catch(() => [])) {
+      if (!visible(it.name)) continue
+      const e = await entry(join(dir, it.name))
+      if (!e) continue
+      out.push(e)
+      if (e.isDir) await walk(e.path, depth + 1)
+    }
+  }
+  await walk(root, 0)
+  return out
+}
+
+/** Rule paths are relative to a library location ("/Notes"), or absolute. */
+function rulePaths(value: string, roots: string[]): string[] {
+  const v = value.trim().replace(/\/+$/, '')
+  if (roots.some((r) => v === r || v.startsWith(r + '/'))) return [v]
+  return roots.map((r) => (v === '' || v === '/' ? r : r + (v.startsWith('/') ? v : '/' + v)))
+}
+
+function dayStart(s: string) {
+  const d = new Date(s)
+  return isNaN(d.getTime()) ? NaN : d.getTime()
+}
+
+function ruleMatches(rule: SmartRule, e: DirEntry, text: string, roots: string[], node: Node | null): boolean {
+  const neg = rule.op === 'isNot' || rule.op === 'notInPast'
+  let ok: boolean
+  switch (rule.field) {
+    case 'search':
+      ok = node ? matchQuery(node, { name: e.name, text }) : true
+      break
+    case 'ancestorPath':
+      ok = rulePaths(rule.value, roots).some((p) => e.path.startsWith(p + '/'))
+      break
+    case 'parentPath':
+      ok = rulePaths(rule.value, roots).some((p) => dirname(e.path) === p)
+      break
+    case 'kind':
+      ok = rule.value === 'folder' ? e.isDir : rule.value === 'text' ? !e.isDir && isTextFile(e.name) : !e.isDir && !isTextFile(e.name)
+      break
+    case 'extension':
+      ok = !e.isDir && extname(e.name).slice(1).toLowerCase() === rule.value.replace(/^\./, '').toLowerCase()
+      break
+    case 'dateCreated':
+    case 'dateModified': {
+      const t = rule.field === 'dateCreated' ? e.ctime : e.mtime
+      if (rule.op === 'inPast' || rule.op === 'notInPast') ok = Date.now() - t <= Number(rule.value) * 86_400_000
+      else if (rule.op === 'after') ok = t >= dayStart(rule.value) + 86_400_000
+      else ok = t < dayStart(rule.value)
+      break
+    }
+  }
+  return neg ? !ok : ok
+}
+
+export async function smartFolder(roots: string[], folder: SmartFolder): Promise<SearchHit[]> {
+  const rules: SmartRule[] = folder.rules?.length ? folder.rules : [{ field: 'search', op: 'matches', value: folder.query }]
+  const searchRule = rules.find((r) => r.field === 'search' && r.value.trim())
+  const node = searchRule ? parseQuery(searchRule.value) : null
+  const needsText = rules.some((r) => r.field === 'search')
+  const hits: SearchHit[] = []
+  for (const root of roots) {
+    for (const e of await walkAll(root)) {
+      const text = needsText && !e.isDir && isTextFile(e.name) && e.size <= MAX_READ ? await readText(e.path) : ''
+      const results = rules.map((r) => ruleMatches(r, e, text, roots, r === searchRule ? node : r.field === 'search' ? parseQuery(r.value) : null))
+      if (folder.match === 'any' ? !results.some(Boolean) : !results.every(Boolean)) continue
+      hits.push(hitFor(e, text, node ?? { t: 'all' }))
+      if (hits.length >= 1000) return hits.sort((a, b) => b.mtime - a.mtime)
     }
   }
   return hits.sort((a, b) => b.mtime - a.mtime)

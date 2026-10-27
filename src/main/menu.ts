@@ -73,6 +73,9 @@ export function buildMenu(openRecent: (path: string) => void) {
         item('Duplicate', 'duplicate'),
         item('Move to Trash', 'trash'),
         item('Reveal in Finder', 'reveal'),
+        item('Show in Library', 'showInLibrary', 'CmdOrCtrl+Alt+Shift+R'),
+        item('Get Info', 'getInfo', 'CmdOrCtrl+Alt+I'),
+        item('Move To…', 'moveTo'),
         sep,
         item('Save Version', 'saveVersion', 'CmdOrCtrl+Alt+S'),
         item('Browse Versions…', 'versions'),
@@ -135,6 +138,7 @@ export function buildMenu(openRecent: (path: string) => void) {
             item('Find Next', 'findNext', 'CmdOrCtrl+G'),
             item('Find Previous', 'findPrev', 'CmdOrCtrl+Shift+G'),
             item('Search Library…', 'searchLibrary', 'CmdOrCtrl+Shift+F'),
+            item('Filter Library', 'filter', 'CmdOrCtrl+Alt+Shift+L'),
             item('Go to Heading…', 'gotoHeading', 'CmdOrCtrl+Shift+J')
           ]
         },
@@ -251,6 +255,26 @@ export function buildMenu(openRecent: (path: string) => void) {
       label: 'View',
       submenu: [
         toggle('Library', s.showSidebar, () => ({ showSidebar: !getSettings().showSidebar }), 'CmdOrCtrl+Alt+1'),
+        toggle('Organizer', s.showOrganizer, () => ({ showOrganizer: !getSettings().showOrganizer }), 'CmdOrCtrl+Alt+0'),
+        toggle('Sort Bar', s.showSortBar, () => ({ showSortBar: !getSettings().showSortBar })),
+        toggle('Filter Bar', s.showFilterBar, () => ({ showFilterBar: !getSettings().showFilterBar })),
+        {
+          label: 'Sort Files By',
+          submenu: [
+            ...(
+              [
+                ['modified', 'Date Modified'],
+                ['created', 'Date Created'],
+                ['name', 'Name'],
+                ['size', 'Size'],
+                ['kind', 'Kind']
+              ] as const
+            ).map(([k, l]) => radio(l, k as Settings['librarySort'], s.librarySort, (v) => ({ librarySort: v }))),
+            sep,
+            toggle('Reverse Order', s.librarySortReverse, () => ({ librarySortReverse: !getSettings().librarySortReverse }))
+          ] as MenuItemConstructorOptions[]
+        },
+        sep,
         toggle('Outline', s.showOutline, () => ({ showOutline: !getSettings().showOutline }), 'CmdOrCtrl+Alt+2'),
         toggle('Preview', s.showPreview, () => ({ showPreview: !getSettings().showPreview }), 'CmdOrCtrl+R'),
         toggle('Stats', s.showStats, () => ({ showStats: !getSettings().showStats }), 'CmdOrCtrl+Alt+3'),

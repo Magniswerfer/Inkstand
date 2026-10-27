@@ -52,10 +52,11 @@ export function extractTitle(text: string, fallback = ''): string {
   return fallback
 }
 
-export function extractExcerpt(text: string, max = 160): string {
+/** The opening text of a document; `fromStart` keeps the first line (the library shows it under the file name). */
+export function extractExcerpt(text: string, max = 160, fromStart = false): string {
   const { body } = splitFrontMatter(text)
   const lines = body.split('\n').map((l) => l.trim()).filter(Boolean)
-  const rest = lines.slice(1).filter((l) => !/^(```|~~~|---|\|)/.test(l))
+  const rest = lines.slice(fromStart ? 0 : 1).filter((l) => !/^(```|~~~|---|\||<!--)/.test(l)).map((l) => l.replace(/^#{1,6}\s+/, ''))
   return stripInline(rest.join(' ').replace(/^#{1,6}\s+/g, '')).slice(0, max)
 }
 

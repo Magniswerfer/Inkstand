@@ -3,10 +3,10 @@ import { promises as fs, watch, type FSWatcher } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import type { Authorship, PdfOptions, PublishAccount, PublishRequest, Settings } from '@shared/types'
+import type { Authorship, PdfOptions, PublishAccount, PublishRequest, Settings, SmartFolder } from '@shared/types'
 import { isTextFile } from '@shared/text'
 import { addRecent, encryptSecret, getSettings, onSettingsChanged, publicSettings, setSettings } from './settings'
-import { LibraryWatcher, listAllFiles, listDir, search, stat, tags } from './library'
+import { LibraryWatcher, listAllFiles, listDir, search, smartFolder, stat, tags, walkAll } from './library'
 import { importTemplate, listTemplates, removeTemplate, templateFile, userTemplatesDir } from './templates'
 import { getAuthorship, listVersions, moveVersions, readVersion, saveVersion, setAuthorship } from './versions'
 import { publish } from './publish'
@@ -253,6 +253,7 @@ app.whenReady().then(async () => {
   handle('fs:stat', (_e, path: string) => stat(path))
   handle('fs:listDir', (_e, dir: string) => listDir(dir))
   handle('fs:listAll', (_e, root: string) => listAllFiles(root, true))
+  handle('fs:listFolders', async (_e, root: string) => [root, ...(await walkAll(root)).filter((e) => e.isDir).map((e) => e.path)])
   handle('fs:mkdir', async (_e, path: string) => {
     await fs.mkdir(path, { recursive: true })
   })
@@ -269,6 +270,7 @@ app.whenReady().then(async () => {
     return shell.openPath(url).then(() => undefined)
   })
   handle('fs:search', (_e, roots: string[], q: string) => search(roots, q))
+  handle('fs:smart', (_e, roots: string[], folder: SmartFolder) => smartFolder(roots, folder))
   handle('fs:tags', (_e, roots: string[]) => tags(roots))
   handle('fs:watchFile', (e, path: string | null) => {
     const s = state(e.sender)
@@ -379,7 +381,8 @@ app.whenReady().then(async () => {
   // Rebuilding the menu bar is slow on macOS; only do it when a menu checkmark or list changed.
   const MENU_KEYS: (keyof Settings)[] = [
     'recent', 'showSidebar', 'showOutline', 'showPreview', 'showStats', 'focusMode', 'typewriter', 'syntax',
-    'styleCheck', 'theme', 'font', 'lineWidth', 'markup', 'spellcheck', 'smartQuotes', 'smartDashes', 'authorship'
+    'styleCheck', 'theme', 'font', 'lineWidth', 'markup', 'spellcheck', 'smartQuotes', 'smartDashes', 'authorship',
+    'showOrganizer', 'showSortBar', 'showFilterBar', 'librarySort', 'librarySortReverse'
   ]
   buildMenu(openPath)
   let menuTimer: NodeJS.Timeout | undefined
