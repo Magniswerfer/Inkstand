@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
-import type { FossWriteApi } from '@shared/types'
+import type { InkstandApi } from '@shared/types'
 
 const invoke = (channel: string) => (...args: unknown[]) => ipcRenderer.invoke(channel, ...args)
 
@@ -11,7 +11,7 @@ function on<T extends unknown[]>(channel: string) {
   }
 }
 
-const api: FossWriteApi = {
+const api: InkstandApi = {
   platform: process.platform,
   getSettings: invoke('settings:get'),
   setSettings: invoke('settings:set'),
@@ -72,6 +72,6 @@ const api: FossWriteApi = {
 
   addDictionaryWord: invoke('spell:add'),
   getPathForFile: (file) => webUtils.getPathForFile(file)
-} as FossWriteApi
+} as InkstandApi
 
 contextBridge.exposeInMainWorld('api', api)

@@ -3,6 +3,7 @@ import { promises as fs, watch, type FSWatcher } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { cpSync, existsSync } from 'node:fs'
 import type { Authorship, PdfOptions, PublishAccount, PublishRequest, Settings, SmartFolder } from '@shared/types'
 import { isTextFile } from '@shared/text'
 import { addRecent, encryptSecret, getSettings, onSettingsChanged, publicSettings, setSettings } from './settings'
@@ -13,6 +14,9 @@ import { publish } from './publish'
 import { resourcePath } from './paths'
 import { handleUrl, SCHEME, type UrlHost } from './urlcommands'
 import { buildMenu } from './menu'
+
+// Inkstand was called FOSS Write before its first release: carry its data over once.
+migrateUserData()
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'fw-template', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } },
@@ -58,7 +62,8 @@ function createWindow(path?: string, restore = false) {
     title: 'Untitled',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 14, y: 14 },
-    tabbingIdentifier: 'foss-write',
+    tabbingIdentifier: 'inkstand',
+    ...(process.platform === 'linux' ? { icon: appIcon() } : {}),
     // macOS: translucent sidebar. Elsewhere an opaque background avoids a white flash.
     ...(process.platform === 'darwin'
       ? { vibrancy: 'sidebar' as const, visualEffectState: 'followWindow' as const, backgroundColor: '#00000000' }
@@ -210,6 +215,20 @@ app.on('second-instance', (_e, argv) => {
 const handle = <A extends unknown[], R>(channel: string, fn: (e: IpcMainInvokeEvent, ...args: A) => R) =>
   ipcMain.handle(channel, (e, ...args) => fn(e, ...(args as A)))
 
+/** The 1024px app icon: bundled as a resource when packaged, from build/ in development. */
+function appIcon() {
+  return app.isPackaged ? join(process.resourcesPath, 'icon.png') : join(app.getAppPath(), 'build', 'icon.png')
+}
+
+function migrateUserData() {
+  const from = join(app.getPath('appData'), 'FOSS Write')
+  const to = app.getPath('userData')
+  if (!existsSync(join(from, 'settings.json')) || existsSync(join(to, 'settings.json'))) return
+  for (const item of ['settings.json', 'versions', 'authorship', 'templates']) {
+    if (existsSync(join(from, item))) cpSync(join(from, item), join(to, item), { recursive: true })
+  }
+}
+
 /** Serves a local file to the renderer; fonts loaded from CSS need a CORS header. */
 async function serveFile(path: string | null): Promise<Response> {
   if (!path) return new Response('Not found', { status: 404 })
@@ -221,7 +240,7 @@ async function serveFile(path: string | null): Promise<Response> {
 }
 
 async function renderPdfWindow(opts: PdfOptions) {
-  const file = join(tmpdir(), `foss-write-${Date.now()}-${Math.random().toString(36).slice(2)}.html`)
+  const file = join(tmpdir(), `inkstand-${Date.now()}-${Math.random().toString(36).slice(2)}.html`)
   // A <base> makes the template's relative stylesheet links resolve against the template folder.
   const html = opts.html.replace(/<head([^>]*)>/i, `<head$1><base href="${opts.baseUrl}">`)
   await fs.writeFile(file, html)
@@ -238,7 +257,16 @@ function headerFooter(html: string, height: number, sideMarginMm: number) {
 }
 
 app.whenReady().then(async () => {
-  app.setName('FOSS Write')
+  app.setName('Inkstand')
+  app.setAboutPanelOptions({
+    applicationName: 'Inkstand',
+    applicationVersion: app.getVersion(),
+    copyright: 'Free software under the GNU AGPL v3',
+    website: 'https://github.com/Magniswerfer/foss-write',
+    iconPath: appIcon()
+  })
+  // Packaged builds take their icon from the bundle; show it in development too.
+  if (!app.isPackaged && process.platform === 'darwin' && !headless) app.dock?.setIcon(appIcon())
   protocol.handle('fw-template', (req) => {
     const url = new URL(req.url)
     return serveFile(templateFile(url.hostname, decodeURIComponent(url.pathname.slice(1))))
@@ -454,7 +482,7 @@ app.whenReady().then(async () => {
 
   // Tests drive URL commands directly instead of through the OS.
   if (headless) (globalThis as any).__fwHandleUrl = (url: string) => handleUrl(url, urlHost)
-  // Packaged builds own the foss-write:// scheme; development runs never claim it.
+  // Packaged builds own the inkstand:// scheme; development runs never claim it.
   if (app.isPackaged) app.setAsDefaultProtocolClient(SCHEME)
   if (process.platform === 'darwin' && !headless) {
     app.dock?.setMenu(

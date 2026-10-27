@@ -6,9 +6,9 @@ const mod = isMac ? '⌘' : 'Ctrl+'
 const alt = isMac ? '⌥' : 'Alt+'
 const shift = isMac ? '⇧' : 'Shift+'
 
-export const guideText = `# Welcome to FOSS Write
+export const guideText = `# Welcome to Inkstand
 
-FOSS Write is a quiet place to write. Plain text files, Markdown syntax, nothing in your way. This guide is an ordinary document — edit it, play with it, delete it.
+Inkstand is a quiet place to write. Plain text files, Markdown syntax, nothing in your way. This guide is an ordinary document — edit it, play with it, delete it.
 
 ## Writing
 
@@ -41,7 +41,7 @@ Press ${mod}R for a live preview. Export to PDF, HTML, Word, Markdown or plain t
 
 ## Your words, your history
 
-FOSS Write keeps a **version history** of every document (*File → Browse Versions*) and remembers which text you typed and which you **pasted** — the status bar shows how much of the text is yours.
+Inkstand keeps a **version history** of every document (*File → Browse Versions*) and remembers which text you typed and which you **pasted** — the status bar shows how much of the text is yours.
 
 Everything is plain files in folders you choose. Nothing leaves your computer unless you publish it.
 `

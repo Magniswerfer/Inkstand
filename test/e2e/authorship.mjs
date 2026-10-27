@@ -30,7 +30,7 @@ let s = await spans()
 check('paste credited to Pasted', s.length === 1 && s[0][2] === 'pasted', s)
 await win.evaluate(() => window.fw.save())
 let disk = readFileSync(doc, 'utf8')
-check('block written to file', /<!-- Authorship · FOSS Write\nsha256: [0-9a-f]{64}\n@Pasted \[reference\]: 14-28\n-->/.test(disk), disk)
+check('block written to file', /<!-- Authorship · Inkstand\nsha256: [0-9a-f]{64}\n@Pasted \[reference\]: 14-28\n-->/.test(disk), disk)
 
 await win.evaluate((p) => window.fw.open(p), other)
 await win.evaluate((p) => window.fw.open(p), doc)

@@ -40,7 +40,12 @@ Math: $E = mc^2$ and a footnote.[^1]
 )
 writeFileSync(join(userData, 'settings.json'), JSON.stringify({ libraryLocations: [lib], recent: [join(lib, 'Essay.md')] }))
 
-const app = await electron.launch({ args: ['.', `--user-data-dir=${userData}`], env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', FW_HEADLESS: '1' } })
+// INKSTAND_APP=/path/to/Inkstand.app/Contents/MacOS/Inkstand tests a packaged build instead of the dev build.
+const packaged = process.env.INKSTAND_APP
+const app = await electron.launch({
+  ...(packaged ? { executablePath: packaged, args: [`--user-data-dir=${userData}`] } : { args: ['.', `--user-data-dir=${userData}`] }),
+  env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', FW_HEADLESS: '1' }
+})
 const logs = []
 const win = await app.firstWindow()
 win.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`))

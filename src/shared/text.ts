@@ -76,7 +76,8 @@ export function fileNameFromTitle(title: string): string {
 
 // ------------------------------------------------------------------ authorship block
 
-const AUTHORSHIP_RE = /\n*<!-- Authorship · FOSS Write\n([\s\S]*?)\n-->\s*$/
+// Inkstand was called FOSS Write before its first release; read blocks written under either name.
+const AUTHORSHIP_RE = /\n*<!-- Authorship · (?:Inkstand|FOSS Write)\n([\s\S]*?)\n-->\s*$/
 
 /** Separates a document's text from its trailing authorship block, if any. */
 export function splitAuthorship(text: string): { body: string; block: string | null } {

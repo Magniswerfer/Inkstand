@@ -1,7 +1,7 @@
 {
   "name": "Academic",
   "description": "Double-spaced, 12pt, one-inch margins.",
-  "author": "FOSS Write",
+  "author": "Inkstand",
   "document": "document.html",
   "header": "header.html",
   "footer": "footer.html",

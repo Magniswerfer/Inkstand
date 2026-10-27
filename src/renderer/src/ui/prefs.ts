@@ -53,7 +53,7 @@ export function openPreferences(app: App, initialTab = 'general') {
           row('Speaking speed', num('speakingWordsPerMinute', 60, 300, 5), 'Words per minute, for speaking time.'),
           row('Words per page', num('wordsPerPage', 100, 800, 5)),
           row('Autosave', bool('autosave'), 'Save changes automatically as you write.'),
-          row('URL commands', urlTokenControl(app), 'Other apps and Shortcuts can open, create, read and write documents with foss-write:// links. Reading and writing need this token.'),
+          row('URL commands', urlTokenControl(app), 'Other apps and Shortcuts can open, create, read and write documents with inkstand:// links. Reading and writing need this token.'),
           row('New file extension', select('defaultExtension', [['md', '.md'], ['markdown', '.markdown'], ['txt', '.txt']]))
         )
     ],
@@ -150,7 +150,7 @@ function authorshipTab(app: App) {
     )
     const name = h('input', { type: 'text', value: a().author, placeholder: 'Me', onchange: () => put({ author: name.value }) })
     wrap.append(
-      h('p', { class: 'pf-intro' }, 'FOSS Write keeps track of who wrote what. Text you type is yours. Pasted text is credited to the author you choose below, and Edit → Authorship → Mark As credits a selection to anyone.'),
+      h('p', { class: 'pf-intro' }, 'Inkstand keeps track of who wrote what. Text you type is yours. Pasted text is credited to the author you choose below, and Edit → Authorship → Mark As credits a selection to anyone.'),
       row('Track authorship', h('input', { type: 'checkbox', checked: a().enabled, onchange: (e: Event) => put({ enabled: (e.target as HTMLInputElement).checked }) })),
       row('Show authors', h('input', { type: 'checkbox', checked: a().showBorrowed, onchange: (e: Event) => put({ showBorrowed: (e.target as HTMLInputElement).checked }) }), 'Colour text written by others.'),
       row(
@@ -328,7 +328,7 @@ function templatesTab(app: App) {
         } }, 'Import Template…'),
         h('button', { onclick: () => api.revealTemplates() }, 'Open Templates Folder')
       ),
-      h('p', { class: 'pf-intro' }, 'Templates are folders of HTML and CSS. FOSS Write reads its own format (template.json) and iA Writer .iatemplate bundles.')
+      h('p', { class: 'pf-intro' }, 'Templates are folders of HTML and CSS. Inkstand reads its own format (template.json) and iA Writer .iatemplate bundles.')
     )
   }
   render()

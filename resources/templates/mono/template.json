@@ -1,7 +1,7 @@
 {
   "name": "Mono",
   "description": "Typewriter style, as you see it while writing.",
-  "author": "FOSS Write",
+  "author": "Inkstand",
   "document": "document.html",
   "header": "header.html",
   "footer": "footer.html",

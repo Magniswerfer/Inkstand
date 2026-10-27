@@ -1,7 +1,7 @@
-import type { FossWriteApi } from '@shared/types'
+import type { InkstandApi } from '@shared/types'
 
 declare global {
   interface Window {
-    api: FossWriteApi
+    api: InkstandApi
   }
 }

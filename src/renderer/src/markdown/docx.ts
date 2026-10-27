@@ -386,7 +386,7 @@ export async function markdownToDocx(markdown: string, meta: Record<string, stri
 
   const doc = new Document({
     title: meta.title,
-    creator: meta.author || 'FOSS Write',
+    creator: meta.author || 'Inkstand',
     description: meta.description,
     footnotes: ctx.footnotes,
     styles: {

@@ -1,7 +1,7 @@
 {
   "name": "Manuscript",
   "description": "Standard manuscript format for submissions.",
-  "author": "FOSS Write",
+  "author": "Inkstand",
   "document": "document.html",
   "header": "header.html",
   "footer": "footer.html",

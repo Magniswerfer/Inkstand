@@ -1,8 +1,27 @@
-# FOSS Write
+<p align="center">
+  <img src="docs/logo.svg" width="128" height="128" alt="Inkstand icon: an ink bottle half full of blue ink">
+</p>
 
-A focused, open-source Markdown writing app for macOS, Windows and Linux. It follows the ideas behind iA Writer: plain text files in your own folders, typography first, and tools that help you write better without getting in the way.
+<h1 align="center">Inkstand</h1>
 
-Licensed under the GNU AGPL v3.
+<p align="center">A focused, open-source writing app for Markdown.<br>Plain text files in your own folders, typography first, and tools that help you write better without getting in the way.</p>
+
+<p align="center">
+  <a href="https://github.com/Magniswerfer/foss-write/releases/latest">Download</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#development">Development</a>
+</p>
+
+![Inkstand with its library open beside an essay](docs/screenshots/library.png)
+
+| | |
+| --- | --- |
+| ![Focus mode in dark: only the current sentence is lit](docs/screenshots/focus.png) | ![Editor beside a live preview using the Classic template](docs/screenshots/preview.png) |
+| **Focus and typewriter modes** keep your eyes on the sentence you're writing. | **Live preview** with templates; export to PDF, Word, HTML and more. |
+| ![Parts of speech coloured, with fillers and clichés underlined](docs/screenshots/syntax.png) | ![A sentence by an AI collaborator shown in purple, with 85% yours in the status bar](docs/screenshots/authorship.png) |
+| **Syntax highlight and style check** show the shape of your sentences. | **Authorship** keeps track of what you wrote and what you didn't. |
+
+Inkstand is free software under the GNU AGPL v3. It follows the ideas behind iA Writer and works with its templates, search syntax and URL commands, but it is an independent project with no affiliation to Information Architects.
 
 ## Features
 
@@ -43,8 +62,20 @@ Licensed under the GNU AGPL v3.
 **Settings and system**
 - Single return starts a new paragraph; math on or off; tabs or spaces; wiki links by name or by path
 - Reading and speaking time
-- URL commands compatible with iA Writer's scheme (open, new, quick-search, read, write with add/patch and author credit, version, x-callback-url) under `foss-write://`
+- URL commands compatible with iA Writer's scheme (open, new, quick-search, read, write with add/patch and author credit, version, x-callback-url) under `inkstand://`
 - Light, dark or system theme; translucent sidebar, Share menu and Dock menu on macOS; window chrome that fades while you type
+
+## Install
+
+Download the latest version for your system from [Releases](https://github.com/Magniswerfer/foss-write/releases/latest):
+
+- **macOS:** `Inkstand-<version>-mac-arm64.dmg` for Apple Silicon, `…-mac-x64.dmg` for Intel. Open the disk image and drag Inkstand to Applications.
+- **Windows:** `Inkstand-<version>-win-x64.exe` (or `-arm64`).
+- **Linux:** the `.AppImage`, or the `.deb` for Debian and Ubuntu.
+
+Until releases are signed with an Apple Developer ID, macOS asks before opening an app from an unidentified developer. The first time, right-click Inkstand in Applications and choose **Open**. Windows SmartScreen may likewise ask you to choose **More info → Run anyway**.
+
+Upgrading from FOSS Write (Inkstand's working name)? Your settings, version history and authorship are carried over on first launch.
 
 ## Development
 
@@ -60,7 +91,18 @@ npm run dev
 | `npm run typecheck` | TypeScript check |
 | `npm test` | Unit tests (Vitest) |
 | `npm run test:e2e` | Drive the built app with Playwright, off-screen (`FW_HEADLESS=1`), through every feature |
-| `npm run dist` | Package installers into `dist/` |
+| `npm run dist` | Package installers for this platform into `dist/` |
+| `npm run screenshots` | Retake the README screenshots |
+
+### Releasing
+
+1. Bump `version` in `package.json` and commit.
+2. Tag and push: `git tag v0.1.0 && git push origin v0.1.0`.
+3. The [Release workflow](.github/workflows/release.yml) builds macOS (Apple Silicon and Intel), Windows and Linux installers and attaches them to a **draft** release. Check it, write the notes, and publish.
+
+macOS builds are ad-hoc signed by default. To sign and notarize them, add these repository secrets: `MAC_CERTIFICATE` (a base64-encoded Developer ID Application `.p12`), `MAC_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID`. See `electron-builder.config.cjs`.
+
+`npm run screenshots` retakes the images in `docs/screenshots` off-screen from the sample library in `scripts/sample-library`.
 
 ### Layout
 
@@ -69,6 +111,10 @@ npm run dev
 - `src/renderer`: the UI, made of the CodeMirror 6 editor (`editor/`), Markdown rendering and exporters (`markdown/`) and panels (`ui/`)
 - `src/shared`: types and text helpers used on both sides
 - `resources/templates`: built-in templates. Each template is a folder with `template.json`, `document.html` (an element marked `data-document` receives the content), and optional `header.html`, `footer.html` and `title.html` that use `data-title`, `data-author`, `data-date`, `data-page-number` and `data-page-count`.
+
+## Credits
+
+Inkstand ships iA Writer Mono, Duo and Quattro by Information Architects and IBM Plex Serif, both under the SIL Open Font License, plus KaTeX's fonts. The editor is built on CodeMirror, and Markdown rendering on markdown-it.
 
 ## Known limitations
 

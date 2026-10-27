@@ -302,7 +302,7 @@ export interface FileChangeEvent {
 /** Menu command ids sent from the main process to the focused window. */
 export type MenuCommand = string
 
-export interface FossWriteApi {
+export interface InkstandApi {
   platform: NodeJS.Platform
   getSettings(): Promise<Settings>
   setSettings(patch: Partial<Settings>): Promise<Settings>

@@ -1,8 +1,8 @@
 {
-  "name": "foss-write",
-  "productName": "FOSS Write",
+  "name": "inkstand",
+  "productName": "Inkstand",
   "version": "0.1.0",
-  "description": "A focused, open-source Markdown writing app.",
+  "description": "A focused, open-source writing app for Markdown.",
   "license": "AGPL-3.0-or-later",
   "main": "./out/main/index.js",
   "type": "module",
@@ -12,8 +12,10 @@
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "dist": "electron-vite build && electron-builder",
-    "test:e2e": "electron-vite build && for t in smoke exports editing authorship library view urls; do node test/e2e/$t.mjs || exit 1; done && node test/e2e/typewriter.mjs end"
+    "dist": "electron-vite build && electron-builder --config electron-builder.config.cjs",
+    "test:e2e": "electron-vite build && for t in smoke exports editing authorship library view urls; do node test/e2e/$t.mjs || exit 1; done && node test/e2e/typewriter.mjs end",
+    "screenshots": "electron-vite build && node scripts/screenshots.mjs",
+    "icon": "sh scripts/icon.sh"
   },
   "devDependencies": {
     "@codemirror/autocomplete": "^6.20.4",
@@ -56,80 +58,7 @@
     "vite": "^7.3.7",
     "vitest": "^5.0.5"
   },
-  "author": "FOSS Write contributors",
+  "author": "Inkstand contributors",
   "repository": "https://github.com/Magniswerfer/foss-write",
-  "build": {
-    "appId": "org.fosswrite.app",
-    "productName": "FOSS Write",
-    "directories": {
-      "buildResources": "build",
-      "output": "dist"
-    },
-    "files": [
-      "out/**/*",
-      "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "resources/templates",
-        "to": "templates"
-      },
-      {
-        "from": "resources/app",
-        "to": "app"
-      },
-      {
-        "from": "node_modules/katex/dist",
-        "to": "vendor/katex",
-        "filter": [
-          "katex.min.css",
-          "fonts/**"
-        ]
-      }
-    ],
-    "fileAssociations": [
-      {
-        "ext": [
-          "md",
-          "markdown",
-          "mdown",
-          "mkd",
-          "txt",
-          "text"
-        ],
-        "name": "Markdown Document",
-        "role": "Editor"
-      }
-    ],
-    "mac": {
-      "category": "public.app-category.productivity",
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "icon": "build/icon.png"
-    },
-    "win": {
-      "target": [
-        "nsis"
-      ],
-      "icon": "build/icon.png"
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "category": "Office",
-      "icon": "build/icon.png"
-    },
-    "protocols": [
-      {
-        "name": "FOSS Write URL",
-        "schemes": [
-          "foss-write"
-        ]
-      }
-    ]
-  }
+  "homepage": "https://github.com/Magniswerfer/foss-write"
 }

@@ -1,7 +1,7 @@
 {
   "name": "Classic",
   "description": "Book typography in a serif face.",
-  "author": "FOSS Write",
+  "author": "Inkstand",
   "document": "document.html",
   "header": "header.html",
   "footer": "footer.html",

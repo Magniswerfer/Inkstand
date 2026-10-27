@@ -1,14 +1,14 @@
 // URL commands, modelled on iA Writer's (scheme version 6) so existing automations translate:
 //
-//   foss-write://open?path=/Notes/Idea.md[&new-window=true]
-//   foss-write://new?path=/Inbox/&text=…[&author=ChatGPT][&new-window=true]
-//   foss-write://quick-search?query=…
-//   foss-write://read?auth-token=…&path=…                  → x-success: path, text
-//   foss-write://write?auth-token=…&path=…&text=…&mode=create|replace|add|patch
+//   inkstand://open?path=/Notes/Idea.md[&new-window=true]
+//   inkstand://new?path=/Inbox/&text=…[&author=ChatGPT][&new-window=true]
+//   inkstand://quick-search?query=…
+//   inkstand://read?auth-token=…&path=…                  → x-success: path, text
+//   inkstand://write?auth-token=…&path=…&text=…&mode=create|replace|add|patch
 //                      [&add-location=beginning|end][&add-padding=sentence|line|paragraph][&author=…]
-//   foss-write://version                                   → x-success: scheme-version, app-version
+//   inkstand://version                                   → x-success: scheme-version, app-version
 //
-// Every command also works as foss-write://x-callback-url/<command>?x-success=…&x-error=…
+// Every command also works as inkstand://x-callback-url/<command>?x-success=…&x-error=…
 //
 // Library paths: "/File.md" is in the first library location; "Ideas: File.md" is in the location
 // named Ideas. Data commands need the auth token from Settings → General.
@@ -22,7 +22,7 @@ import { extractTitle, fileNameFromTitle, isTextFile } from '@shared/text'
 import type { AuthorKind, Span } from '@shared/types'
 import { getSettings, setSettings } from './settings'
 
-export const SCHEME = 'foss-write'
+export const SCHEME = 'inkstand'
 export const SCHEME_VERSION = '6'
 
 export interface UrlHost {
@@ -170,7 +170,7 @@ export async function handleUrl(raw: string, host: UrlHost) {
   const bool = (k: string) => p.get(k) === 'true'
   const needsToken = () => {
     if (p.get('auth-token') === urlToken()) return false
-    fail('Missing or wrong auth-token. Find it in FOSS Write → Settings → General.')
+    fail('Missing or wrong auth-token. Find it in Inkstand → Settings → General.')
     return true
   }
   const libPath = (required: boolean) => {
