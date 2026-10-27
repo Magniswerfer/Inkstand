@@ -67,13 +67,23 @@ Inkstand is free software under the GNU AGPL v3. It follows the ideas behind iA 
 
 ## Install
 
-Download the latest version for your system from [Releases](https://github.com/Magniswerfer/foss-write/releases/latest):
+Download the latest version from [Releases](https://github.com/Magniswerfer/foss-write/releases/latest). You only need one file:
 
-- **macOS:** `Inkstand-<version>-mac-arm64.dmg` for Apple Silicon, `…-mac-x64.dmg` for Intel. Open the disk image and drag Inkstand to Applications.
-- **Windows:** `Inkstand-<version>-win-x64.exe` (or `-arm64`).
-- **Linux:** the `.AppImage`, or the `.deb` for Debian and Ubuntu.
+| Your computer | Download |
+| --- | --- |
+| Mac with Apple silicon (M1 or later) | `Inkstand-<version>-mac-arm64.dmg` |
+| Mac with an Intel processor | `Inkstand-<version>-mac-x64.dmg` |
+| Windows | `Inkstand-<version>-win-x64.exe` |
+| Linux (any distribution) | `Inkstand-<version>-linux-x86_64.AppImage` |
+| Debian or Ubuntu | `Inkstand-<version>-linux-amd64.deb` |
 
-Until releases are signed with an Apple Developer ID, macOS asks before opening an app from an unidentified developer. The first time, right-click Inkstand in Applications and choose **Open**. Windows SmartScreen may likewise ask you to choose **More info → Run anyway**.
+Not sure which Mac you have? Choose **Apple menu → About This Mac**: it says "Chip: Apple M…" or "Processor: Intel".
+
+- **macOS:** open the disk image and drag Inkstand to Applications. The app is signed and notarized by Apple, so it opens like any other.
+- **Windows:** run the installer. Windows SmartScreen may warn about an unrecognised app until the installer is code-signed; choose **More info → Run anyway**.
+- **Linux:** make the AppImage executable (`chmod +x Inkstand-*.AppImage`) and run it, or install the `.deb` with `sudo apt install ./Inkstand-*.deb`.
+
+The other files on the release page (`.zip`, `.blockmap`, `latest*.yml`) are used for updates; you don't need to download them.
 
 Upgrading from FOSS Write (Inkstand's working name)? Your settings, version history and authorship are carried over on first launch.
 
@@ -96,11 +106,11 @@ npm run dev
 
 ### Releasing
 
-1. Bump `version` in `package.json` and commit.
+1. Bump `version` in `package.json`, add a section for it to `CHANGELOG.md`, and commit.
 2. Tag and push: `git tag v0.1.0 && git push origin v0.1.0`.
-3. The [Release workflow](.github/workflows/release.yml) builds macOS (Apple Silicon and Intel), Windows and Linux installers and attaches them to a **draft** release. Check it, write the notes, and publish.
+3. The [Release workflow](.github/workflows/release.yml) builds macOS (Apple Silicon and Intel), Windows and Linux installers into a **draft** release titled "Inkstand <version>", with a download table and the changelog section as its notes (`scripts/release-notes.mjs`). Check it and publish.
 
-macOS builds are ad-hoc signed by default. To sign and notarize them, add these repository secrets: `MAC_CERTIFICATE` (a base64-encoded Developer ID Application `.p12`), `MAC_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID`. See `electron-builder.config.cjs`.
+macOS builds are signed and notarized when these repository secrets are set (without them, builds fall back to ad-hoc signing): `MAC_CERTIFICATE` (a base64-encoded Developer ID Application `.p12`), `MAC_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID`. See `electron-builder.config.cjs`.
 
 `npm run screenshots` retakes the images in `docs/screenshots` off-screen from the sample library in `scripts/sample-library`.
 

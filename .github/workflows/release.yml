@@ -35,3 +35,17 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+  notes:
+    # Gives the draft a readable title and notes: a download table and the CHANGELOG section.
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Title and notes
+        run: |
+          version=$(node -p "require('./package.json').version")
+          node scripts/release-notes.mjs "$version" > notes.md
+          gh release edit "v$version" --title "Inkstand $version" --notes-file notes.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

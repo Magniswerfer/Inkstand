@@ -60,7 +60,8 @@ module.exports = {
   },
   win: {
     icon: 'build/icon.png',
-    target: [{ target: 'nsis', arch: ['x64', 'arm64'] }]
+    // x64 only: Windows on ARM runs it through emulation, and a single installer is easier to pick.
+    target: [{ target: 'nsis', arch: ['x64'] }]
   },
   nsis: { oneClick: false, allowToChangeInstallationDirectory: true, perMachine: false },
   linux: {
