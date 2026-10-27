@@ -12,6 +12,13 @@ for (const key of ['CSC_LINK', 'CSC_KEY_PASSWORD', 'APPLE_ID', 'APPLE_APP_SPECIF
   if (!process.env[key]) delete process.env[key]
 }
 
+// The Developer ID certificate is for macOS only; electron-builder would otherwise try to sign
+// Windows builds with it too. Windows signing would use WIN_CSC_LINK.
+if (process.platform !== 'darwin') {
+  delete process.env.CSC_LINK
+  delete process.env.CSC_KEY_PASSWORD
+}
+
 const signed = Boolean(process.env.CSC_LINK)
 const notarize = signed && Boolean(process.env.APPLE_ID && process.env.APPLE_APP_SPECIFIC_PASSWORD && process.env.APPLE_TEAM_ID)
 
