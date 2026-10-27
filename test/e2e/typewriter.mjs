@@ -9,7 +9,7 @@ const lib = mkdtempSync(join(tmpdir(), 'fw-lib-'))
 writeFileSync(join(lib, 'Draft.md'), '# Draft\n\n' + 'A line of text.\n\n'.repeat(30))
 writeFileSync(join(userData, 'settings.json'), JSON.stringify({ libraryLocations: [lib], recent: [join(lib, 'Draft.md')], typewriter: true }))
 
-const app = await electron.launch({ args: ['.', `--user-data-dir=${userData}`] })
+const app = await electron.launch({ args: ['.', `--user-data-dir=${userData}`], env: { ...process.env, FW_HEADLESS: '1' } })
 const win = await app.firstWindow()
 await win.waitForTimeout(1500)
 
@@ -44,7 +44,11 @@ for (const [kind, arg] of steps) {
   else await win.keyboard.press(kind)
   const o = await offset()
   worst = Math.max(worst, Math.abs(o))
-  console.log(`${kind.padEnd(9)} ${arg ?? ''} offset ${o}px`)
+  const dbg = process.env.DEBUG ? await win.evaluate(() => {
+    const v = window.fw.editor.view, d = v.scrollDOM, c = v.contentDOM
+    return `scrollTop=${Math.round(d.scrollTop)} max=${d.scrollHeight - d.clientHeight} padBottom=${getComputedStyle(c).paddingBottom} lines=${v.state.doc.lines}`
+  }) : ''
+  console.log(`${kind.padEnd(9)} ${arg ?? ''} offset ${o}px ${dbg}`)
 }
 app.close().catch(() => {})
 console.log(worst <= 20 ? 'PASS' : `FAIL (worst ${worst}px)`)

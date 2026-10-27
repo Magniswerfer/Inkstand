@@ -19,6 +19,13 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'fw-vendor', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }
 ])
 
+/**
+ * Test-only: FW_HEADLESS=1 renders windows off-screen, never shows them and keeps the app out of
+ * the Dock, so end-to-end tests can run without taking over the screen.
+ */
+const headless = process.env.FW_HEADLESS === '1'
+if (headless && process.platform === 'darwin') app.setActivationPolicy('prohibited')
+
 interface DocState {
   path: string | null
   dirty: boolean
@@ -59,14 +66,16 @@ function createWindow(path?: string, restore = false) {
       preload: join(import.meta.dirname, '../preload/index.mjs'),
       sandbox: false,
       contextIsolation: true,
-      spellcheck: true
+      spellcheck: true,
+      offscreen: headless,
+      backgroundThrottling: !headless
     }
   })
   const wc = win.webContents
   const id = wc.id
   state(wc)
 
-  win.once('ready-to-show', () => win.show())
+  if (!headless) win.once('ready-to-show', () => win.show())
   wc.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
     return { action: 'deny' }

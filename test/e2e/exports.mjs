@@ -51,7 +51,7 @@ Term
 if (iaTemplate && existsSync(iaTemplate)) cpSync(iaTemplate, join(userData, 'templates', basename(iaTemplate)), { recursive: true })
 writeFileSync(join(userData, 'settings.json'), JSON.stringify({ libraryLocations: [lib] }))
 
-const app = await electron.launch({ args: ['.', `--user-data-dir=${userData}`] })
+const app = await electron.launch({ args: ['.', `--user-data-dir=${userData}`], env: { ...process.env, FW_HEADLESS: '1' } })
 const win = await app.firstWindow()
 const logs = []
 win.on('console', (m) => m.type() === 'error' && logs.push(m.text()))
