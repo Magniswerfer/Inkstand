@@ -6,6 +6,12 @@
 //     without warnings.
 //   - Without them it is ad-hoc signed, which Apple Silicon requires to run at all; people then open
 //     it the first time with right-click → Open.
+// CI passes unset secrets as empty strings, which electron-builder would read as a certificate
+// path ("not a file"). Treat empty as unset.
+for (const key of ['CSC_LINK', 'CSC_KEY_PASSWORD', 'APPLE_ID', 'APPLE_APP_SPECIFIC_PASSWORD', 'APPLE_TEAM_ID']) {
+  if (!process.env[key]) delete process.env[key]
+}
+
 const signed = Boolean(process.env.CSC_LINK)
 const notarize = signed && Boolean(process.env.APPLE_ID && process.env.APPLE_APP_SPECIFIC_PASSWORD && process.env.APPLE_TEAM_ID)
 
