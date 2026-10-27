@@ -230,9 +230,10 @@ body.typing #editor .cm-scroller::-webkit-scrollbar-thumb {
   text-decoration-thickness: 2px;
 }
 
-.cm-fw-borrowed {
-  color: var(--borrowed);
-  background: color-mix(in srgb, var(--borrowed) 10%, transparent);
+/* Text credited to someone else, in their colour. */
+.cm-fw-authored {
+  color: var(--fw-author);
+  background: color-mix(in srgb, var(--fw-author) 9%, transparent);
 }
 
 .cm-tooltip.cm-tooltip-hover,

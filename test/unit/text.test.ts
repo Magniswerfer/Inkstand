@@ -73,8 +73,8 @@ describe('typography', () => {
 })
 
 describe('authorship', () => {
-  it('subtracts typed ranges from borrowed ones', () => {
-    expect(subtract([[0, 10]], 3, 5)).toEqual([[0, 3], [5, 10]])
+  it('subtracts typed ranges from authored ones', () => {
+    expect(subtract([[0, 10, 'ai']], 3, 5)).toEqual([[0, 3, 'ai'], [5, 10, 'ai']])
   })
 })
 

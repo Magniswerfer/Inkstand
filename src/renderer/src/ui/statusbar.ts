@@ -1,7 +1,7 @@
 // Bottom bar: counts, reading time, authorship and quick toggles. Fades while you type.
 import type { StatMetric } from '@shared/types'
 import type { App } from '../app'
-import { borrowedShare } from '../editor/authorship'
+import { authorShares } from '../editor/authorship'
 import { computeStats, formatReadingTime, type Stats } from '../stats'
 import { clear, debounce, h } from './dom'
 import { contextMenu } from './overlay'
@@ -73,15 +73,29 @@ export class StatusBar {
     this.left.append(metric)
 
     if (s.authorship.enabled && app.text.length) {
-      const share = borrowedShare(app.editor.borrowed, app.text.length)
-      if (share > 0)
+      const shares = authorShares(app.editor.spans)
+      const others = [...shares.values()].reduce((a, b) => a + b, 0)
+      if (others > 0) {
+        const total = app.text.length
+        const pct = (n: number) => `${Math.round((n / total) * 100)}%`
+        const lines = [
+          { label: `${s.authorship.author || 'You'}: ${pct(total - others)}`, checked: false },
+          ...[...shares].map(([id, n]) => ({ label: `${s.authorship.authors.find((a) => a.id === id)?.name ?? 'Unknown'}: ${pct(n)}`, checked: false }))
+        ]
         this.left.append(
           h(
             'button',
-            { class: 'st-chip', title: 'Share of the text you pasted rather than typed. Click to highlight it.', onclick: () => app.set({ authorship: { ...s.authorship, showBorrowed: !s.authorship.showBorrowed } }) },
-            `${Math.round((1 - share) * 100)}% yours`
+            {
+              class: 'st-chip',
+              title: 'How much of this text you wrote. Click to colour text by author; right-click for a breakdown.',
+              onclick: () => app.run('toggleAuthors'),
+              oncontextmenu: (e: MouseEvent) =>
+                contextMenu(e, [...lines, { separator: true, label: '' }, { label: s.authorship.showBorrowed ? 'Hide Authors' : 'Show Authors', action: () => app.run('toggleAuthors') }])
+            },
+            `${pct(total - others)} yours`
           )
         )
+      }
     }
 
     const toggle = (label: string, on: boolean, cmd: string, title: string) =>

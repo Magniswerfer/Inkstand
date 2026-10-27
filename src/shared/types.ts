@@ -17,6 +17,19 @@ export interface CustomPattern {
   enabled: boolean
 }
 
+export type AuthorKind = 'human' | 'ai' | 'reference'
+
+/** Someone or something other than you that text can be attributed to. */
+export interface Author {
+  id: string
+  name: string
+  kind: AuthorKind
+  color: string
+}
+
+/** [from, to, authorId]: a run of text not written by you. */
+export type Span = [number, number, string]
+
 export interface SmartFolder {
   id: string
   name: string
@@ -79,7 +92,18 @@ export interface Settings {
   favorites: string[]
   recent: string[]
   smartFolders: SmartFolder[]
-  authorship: { enabled: boolean; showBorrowed: boolean; author: string }
+  authorship: {
+    enabled: boolean
+    /** Colour text by author. */
+    showBorrowed: boolean
+    /** Your name. */
+    author: string
+    authors: Author[]
+    /** Author that pasted text is attributed to ('' = you). */
+    pasteAuthor: string
+    /** Keep authorship inside the document (a trailing HTML comment) so it travels with the file. */
+    storeInFile: boolean
+  }
   versions: { enabled: boolean; intervalMinutes: number; max: number }
   autosave: boolean
   defaultExtension: 'md' | 'markdown' | 'txt'
@@ -125,7 +149,14 @@ export const DEFAULT_SETTINGS: Settings = {
   favorites: [],
   recent: [],
   smartFolders: [],
-  authorship: { enabled: true, showBorrowed: false, author: '' },
+  authorship: {
+    enabled: true,
+    showBorrowed: false,
+    author: '',
+    authors: [{ id: 'pasted', name: 'Pasted', kind: 'reference', color: '#8a8f99' }],
+    pasteAuthor: 'pasted',
+    storeInFile: true
+  },
   versions: { enabled: true, intervalMinutes: 10, max: 200 },
   autosave: true,
   defaultExtension: 'md',
@@ -180,8 +211,11 @@ export interface VersionInfo {
 }
 
 export interface Authorship {
-  /** Ranges of text that the user did not type themselves (pasted / AI / other authors). */
-  borrowed: [number, number][]
+  spans?: Span[]
+  /** Hash of the text the spans refer to; a mismatch means the file changed elsewhere. */
+  sha256?: string
+  /** Pre-authors format: ranges of pasted text. */
+  borrowed?: [number, number][]
 }
 
 export interface PdfOptions {

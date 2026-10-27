@@ -1,10 +1,15 @@
 import { promises as fs, watch, type FSWatcher } from 'node:fs'
 import { join, basename } from 'node:path'
 import type { DirEntry, FileSummary, SearchHit } from '@shared/types'
-import { extractExcerpt, extractTags, extractTitle, isTextFile } from '@shared/text'
+import { extractExcerpt, extractTags, extractTitle, isTextFile, splitAuthorship } from '@shared/text'
 
 const SKIP = new Set(['node_modules', '.git', '.Trash', '.obsidian'])
 const MAX_READ = 2 * 1024 * 1024
+
+/** A document's text without its trailing authorship block. */
+async function readText(path: string): Promise<string> {
+  return splitAuthorship(await fs.readFile(path, 'utf8').catch(() => '')).body
+}
 
 function visible(name: string) {
   return !name.startsWith('.') && !SKIP.has(name)
@@ -30,7 +35,7 @@ export async function listDir(dir: string): Promise<FileSummary[]> {
       if (!e) return null
       if (e.isDir) return { ...e, title: name, excerpt: '', tags: [] }
       if (!isTextFile(name)) return null
-      const text = e.size > MAX_READ ? '' : await fs.readFile(e.path, 'utf8').catch(() => '')
+      const text = e.size > MAX_READ ? '' : await readText(e.path)
       const base = name.replace(/\.[^.]+$/, '')
       return { ...e, title: extractTitle(text, base) || base, excerpt: extractExcerpt(text), tags: extractTags(text) }
     })
@@ -95,7 +100,7 @@ export async function search(roots: string[], raw: string): Promise<SearchHit[]>
   for (const root of roots) {
     for (const f of await listAllFiles(root)) {
       if (f.size > MAX_READ) continue
-      const text = await fs.readFile(f.path, 'utf8').catch(() => '')
+      const text = await readText(f.path)
       if (!matches(text, f.name, q)) continue
       const lines = text.split('\n')
       let line = lines.findIndex((l) => needles.some((n) => l.toLowerCase().includes(n)))
@@ -112,7 +117,7 @@ export async function tags(roots: string[]): Promise<{ tag: string; count: numbe
   for (const root of roots) {
     for (const f of await listAllFiles(root)) {
       if (f.size > MAX_READ) continue
-      const text = await fs.readFile(f.path, 'utf8').catch(() => '')
+      const text = await readText(f.path)
       for (const t of extractTags(text)) counts.set(t, (counts.get(t) ?? 0) + 1)
     }
   }

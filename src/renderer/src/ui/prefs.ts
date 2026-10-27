@@ -1,5 +1,5 @@
 // Settings window.
-import type { CustomPattern, PublishAccount, Settings } from '@shared/types'
+import type { Author, CustomPattern, PublishAccount, Settings } from '@shared/types'
 import type { App } from '../app'
 import { clear, h } from './dom'
 import { modal, toast } from './overlay'
@@ -96,21 +96,7 @@ export function openPreferences(app: App, initialTab = 'general') {
           })(), 'Automatic versions per document. Named versions are always kept.')
         )
     ],
-    authorship: [
-      'Authorship',
-      () =>
-        h(
-          'div',
-          null,
-          h('p', { class: 'pf-intro' }, 'FOSS Write remembers which text you typed and which you pasted, from quotes, notes or AI tools, so you always know what is yours. This is stored on your computer, not in the file.'),
-          row('Track authorship', check(() => s().authorship.enabled, (v) => ({ authorship: { ...s().authorship, enabled: v } }))),
-          row('Highlight pasted text', check(() => s().authorship.showBorrowed, (v) => ({ authorship: { ...s().authorship, showBorrowed: v } }))),
-          row('Your name', (() => {
-            const el = h('input', { type: 'text', value: s().authorship.author, onchange: () => set({ authorship: { ...s().authorship, author: el.value } }) })
-            return el
-          })())
-        )
-    ],
+    authorship: ['Authorship', () => authorshipTab(app)],
     publishing: ['Publishing', () => accountsTab(app)]
   }
 
@@ -124,6 +110,52 @@ export function openPreferences(app: App, initialTab = 'general') {
   for (const [id, [label]] of Object.entries(tabs)) nav.append(h('button', { 'data-tab': id, onclick: () => show(id) }, label))
   modal('Settings', h('div', { class: 'pf' }, nav, body), { wide: true })
   show(tabs[initialTab] ? initialTab : 'general')
+}
+
+function authorshipTab(app: App) {
+  const wrap = h('div')
+  const a = () => app.settings.authorship
+  const put = (patch: Partial<Settings['authorship']>) => app.set({ authorship: { ...a(), ...patch } }).then(render)
+  function render() {
+    clear(wrap)
+    const pasteSel = h(
+      'select',
+      { onchange: () => put({ pasteAuthor: pasteSel.value }) },
+      h('option', { value: '', selected: a().pasteAuthor === '' }, `${a().author || 'Me'} (don’t track pastes)`),
+      a().authors.map((x) => h('option', { value: x.id, selected: a().pasteAuthor === x.id }, x.name))
+    )
+    const name = h('input', { type: 'text', value: a().author, placeholder: 'Me', onchange: () => put({ author: name.value }) })
+    wrap.append(
+      h('p', { class: 'pf-intro' }, 'FOSS Write keeps track of who wrote what. Text you type is yours. Pasted text is credited to the author you choose below, and Edit → Authorship → Mark As credits a selection to anyone.'),
+      row('Track authorship', h('input', { type: 'checkbox', checked: a().enabled, onchange: (e: Event) => put({ enabled: (e.target as HTMLInputElement).checked }) })),
+      row('Show authors', h('input', { type: 'checkbox', checked: a().showBorrowed, onchange: (e: Event) => put({ showBorrowed: (e.target as HTMLInputElement).checked }) }), 'Colour text written by others.'),
+      row(
+        'Store in the document',
+        h('input', { type: 'checkbox', checked: a().storeInFile, onchange: (e: Event) => put({ storeInFile: (e.target as HTMLInputElement).checked }) }),
+        'Adds a hidden comment at the end of documents that contain text by others, so authorship syncs with the file. Otherwise it stays on this computer.'
+      ),
+      row('Your name', name),
+      row('Credit pasted text to', pasteSel),
+      h('h4', null, 'Authors')
+    )
+    for (const au of a().authors) {
+      const update = (patch: Partial<Author>) => put({ authors: a().authors.map((x) => (x.id === au.id ? { ...x, ...patch } : x)) })
+      const kind = h('select', { onchange: () => update({ kind: kind.value as Author['kind'] }) }, (['human', 'ai', 'reference'] as const).map((k) => h('option', { value: k, selected: au.kind === k }, k === 'ai' ? 'AI' : k === 'human' ? 'Person' : 'Reference')))
+      wrap.append(
+        h(
+          'div',
+          { class: 'pf-pattern' },
+          h('input', { type: 'color', value: au.color, title: 'Colour', onchange: (e: Event) => update({ color: (e.target as HTMLInputElement).value }) }),
+          h('input', { type: 'text', value: au.name, onchange: (e: Event) => update({ name: (e.target as HTMLInputElement).value.trim() || au.name }) }),
+          kind,
+          h('button', { onclick: () => put({ authors: a().authors.filter((x) => x.id !== au.id), pasteAuthor: a().pasteAuthor === au.id ? '' : a().pasteAuthor }) }, 'Remove')
+        )
+      )
+    }
+    wrap.append(h('div', { class: 'fw-actions left' }, h('button', { onclick: async () => (await app.newAuthor(), render()) }, 'Add Author…')))
+  }
+  render()
+  return wrap
 }
 
 function locationsEditor(app: App) {

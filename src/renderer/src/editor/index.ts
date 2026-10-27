@@ -9,7 +9,7 @@ import { drawSelection, dropCursor, EditorView, highlightSpecialChars, keymap, p
 import TurndownService from 'turndown'
 import { gfm } from 'turndown-plugin-gfm'
 import type { Settings } from '@shared/types'
-import { authorshipDisplay, authorshipField, setBorrowed, type Ranges } from './authorship'
+import { authorshipDisplay, authorshipField, setPasteAuthor, setSpans, type Span } from './authorship'
 import { completions, type CompletionSource } from './complete'
 import { focusMode } from './focus'
 import { refreshImages, inlineImages } from './images'
@@ -71,6 +71,7 @@ export class Editor {
   }
 
   private configurable(s: Settings) {
+    setPasteAuthor(s.authorship.enabled ? s.authorship.pasteAuthor : '')
     return {
       markup: markup(s.markup, s.hangingHeadings),
       focus: focusMode(s.focusMode),
@@ -79,7 +80,7 @@ export class Editor {
       style: styleCheck(s.styleCheck, (p) => this.host.ignoreStylePhrase(p)),
       typography: typography({ quotes: s.smartQuotes, dashes: s.smartDashes }),
       images: inlineImages(s.inlineImages, (src) => this.host.resolveImage(src)),
-      authorship: authorshipDisplay(s.authorship.enabled && s.authorship.showBorrowed),
+      authorship: authorshipDisplay(s.authorship.enabled && s.authorship.showBorrowed, s.authorship.authors),
       brackets: s.autoPair ? [closeBrackets(), keymap.of(closeBracketsKeymap)] : [],
       attrs: EditorView.contentAttributes.of({ spellcheck: String(s.spellcheck), autocorrect: 'off', autocapitalize: 'sentences', 'aria-label': 'Document' })
     } satisfies Record<keyof Editor['c'], Extension>
@@ -186,9 +187,9 @@ export class Editor {
   }
 
   /** Replaces the whole document (new file opened); resets undo history. */
-  setDoc(text: string, borrowed: Ranges = []) {
+  setDoc(text: string, spans: Span[] = []) {
     this.view.setState(this.createState(text, this.settings))
-    if (borrowed.length) this.view.dispatch({ effects: setBorrowed.of(borrowed.filter(([, b]) => b <= text.length)) })
+    if (spans.length) this.view.dispatch({ effects: setSpans.of(spans.filter(([, b]) => b <= text.length)) })
   }
 
   /** Replaces the text but keeps undo history (reload after an external change). */
@@ -202,7 +203,7 @@ export class Editor {
     return this.view.state.doc.toString()
   }
 
-  get borrowed(): Ranges {
+  get spans(): Span[] {
     return this.view.state.field(authorshipField)
   }
 

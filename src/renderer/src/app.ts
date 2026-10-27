@@ -1,9 +1,12 @@
 import type { DirEntry, Settings } from '@shared/types'
 import { extractTags, extractTitle, fileNameFromTitle, isTextFile } from '@shared/text'
 import { Editor } from './editor'
-import { markBorrowed } from './editor/authorship'
+import { markAs, type Span } from './editor/authorship'
+import { parseAuthorship, sha256, writeAuthorship, type AuthorEntry } from '@shared/authorship-file'
+import type { Author } from '@shared/types'
 import { editTableAt, insertBlock, insertCallout, insertCodeBlock, insertDate, insertFootnote, insertImageLink, insertLink, insertTable, insertText, setLinePrefix, tidyTable, toggleComment, toggleTask, toggleWrap, type Callout } from './editor/format'
 import { transformSelection, type CaseMode } from './editor/transform'
+import { pasteEdits } from './editor/edits'
 import { startCompletion } from '@codemirror/autocomplete'
 import type { TableOp } from './markdown/table'
 import { htmlToMarkdown } from './editor'
@@ -34,6 +37,9 @@ export interface Command {
   /** Hidden from the command palette. */
   hidden?: boolean
 }
+
+/** Colours handed to new authors in turn. */
+export const AUTHOR_COLORS = ['#8a8f99', '#b5651d', '#7b3fb0', '#1f7a5a', '#b23a48', '#2f6db0', '#9a7d0a']
 
 export class App {
   settings!: Settings
@@ -179,7 +185,7 @@ export class App {
         }
       }
       const text = this.text
-      await api.writeFile(path, text)
+      await api.writeFile(path, await this.fileContent(text))
       const fresh = path !== this.path
       this.path = path
       this.saved = text
@@ -188,7 +194,7 @@ export class App {
         this.library.refresh()
       }
       this.updateState()
-      api.setAuthorship(path, { borrowed: this.editor.borrowed })
+      api.setAuthorship(path, { spans: this.editor.spans, sha256: await sha256(text) })
       if (Date.now() - this.lastVersionCheck > 30_000 || fresh) {
         this.lastVersionCheck = Date.now()
         api.saveVersion(path, text, false)
@@ -196,6 +202,78 @@ export class App {
     }
     this.saving = run().finally(() => (this.saving = null))
     return this.saving
+  }
+
+  /** What goes on disk: the text, plus its authorship block when that's kept in the file. */
+  private async fileContent(text: string): Promise<string> {
+    const a = this.settings.authorship
+    if (!a.enabled || !a.storeInFile) return text
+    return writeAuthorship(text, this.authorEntries(this.editor.spans))
+  }
+
+  private authorEntries(spans: Span[]): AuthorEntry[] {
+    const byId = new Map<string, AuthorEntry>()
+    for (const [from, to, id] of spans) {
+      const author = this.settings.authorship.authors.find((x) => x.id === id)
+      if (!author) continue
+      if (!byId.has(id)) byId.set(id, { name: author.name, kind: author.kind, ranges: [] })
+      byId.get(id)!.ranges.push([from, to])
+    }
+    return [...byId.values()]
+  }
+
+  /** Reads a file's text and authorship, from the file itself or the local store. */
+  private async load(path: string, raw: string): Promise<{ text: string; spans: Span[] }> {
+    const parsed = await parseAuthorship(raw)
+    const reset = () => toast(`“${basename(path)}” was edited in another app, so its authorship was reset.`)
+    if (parsed.stale) {
+      reset()
+      return { text: parsed.body, spans: [] }
+    }
+    if (parsed.entries.length) return { text: parsed.body, spans: await this.spansFromEntries(parsed.entries) }
+    // Kept on this computer instead: only trust it if the text is unchanged since.
+    const local = await api.getAuthorship(path)
+    const spans = local?.spans ?? (local?.borrowed ?? []).map(([a, b]) => [a, b, 'pasted'] as Span)
+    if (!spans.length) return { text: parsed.body, spans: [] }
+    if (local?.sha256 && local.sha256 !== (await sha256(parsed.body))) {
+      reset()
+      return { text: parsed.body, spans: [] }
+    }
+    return { text: parsed.body, spans: spans.filter(([, b]) => b <= parsed.body.length) }
+  }
+
+  /** Maps authors named in a file to local authors, adding any this computer hasn't seen. */
+  private async spansFromEntries(entries: AuthorEntry[]): Promise<Span[]> {
+    const authors = [...this.settings.authorship.authors]
+    const spans: Span[] = []
+    for (const e of entries) {
+      let a = authors.find((x) => x.name.toLowerCase() === e.name.toLowerCase())
+      if (!a) {
+        a = { id: crypto.randomUUID(), name: e.name, kind: e.kind, color: AUTHOR_COLORS[authors.length % AUTHOR_COLORS.length] }
+        authors.push(a)
+      }
+      for (const [from, to] of e.ranges) spans.push([from, to, a.id])
+    }
+    if (authors.length !== this.settings.authorship.authors.length) await this.set({ authorship: { ...this.settings.authorship, authors } })
+    return spans
+  }
+
+  /** Saves after authorship changed without the text changing (Mark As). */
+  private authorshipChanged() {
+    this.status.update()
+    if (this.path) this.save().catch((e) => toast(String(e.message ?? e), { error: true }))
+  }
+
+  async newAuthor(): Promise<Author | null> {
+    const name = (await prompt('New Author', '', { label: 'Name (a person, an AI tool, or a source):', okLabel: 'Add' }))?.trim()
+    if (!name) return null
+    const a = this.settings.authorship
+    const existing = a.authors.find((x) => x.name.toLowerCase() === name.toLowerCase())
+    if (existing) return existing
+    const kind: Author['kind'] = /gpt|claude|gemini|copilot|llama|mistral|\bai\b/i.test(name) ? 'ai' : 'human'
+    const author: Author = { id: crypto.randomUUID(), name, kind, color: AUTHOR_COLORS[a.authors.length % AUTHOR_COLORS.length] }
+    await this.set({ authorship: { ...a, authors: [...a.authors, author] } })
+    return author
   }
 
   async uniquePath(path: string): Promise<string> {
@@ -236,12 +314,12 @@ export class App {
       toast(`Couldn’t open ${basename(path)}: ${e.message ?? e}`, { error: true })
       return
     }
-    const authorship = await api.getAuthorship(path)
+    const doc = await this.load(path, text)
     this.path = path
-    this.saved = text
-    this.editor.setDoc(text, authorship?.borrowed ?? [])
+    this.saved = doc.text
+    this.editor.setDoc(doc.text, doc.spans)
     api.watchFile(path)
-    api.saveVersion(path, text, false)
+    api.saveVersion(path, doc.text, false)
     this.afterLoad()
     const recent = [path, ...this.settings.recent.filter((p) => p !== path)].slice(0, 30)
     api.setSettings({ recent })
@@ -285,8 +363,10 @@ export class App {
       toast(`“${basename(path)}” was moved or deleted. Save to keep it.`, { error: true })
       return
     }
-    const disk = await api.readFile(path).catch(() => null)
-    if (disk == null || disk === this.saved) return
+    const raw = await api.readFile(path).catch(() => null)
+    if (raw == null) return
+    const disk = (await parseAuthorship(raw)).body
+    if (disk === this.saved) return
     if (!this.dirty) {
       this.saved = disk
       this.editor.replaceDoc(disk)
@@ -578,19 +658,24 @@ export class App {
       this.library.focusSearch(this.editor.selectionText().split('\n')[0])
     })
     add('gotoHeading', 'Go to Heading…', () => this.palette.headings())
-    add('markBorrowed', 'Mark Selection as Borrowed', () => {
+    add('markAs', 'Mark As', async (authorId: string) => {
+      const id = authorId === 'new' ? (await this.newAuthor())?.id : authorId
+      if (id === undefined) return
       const r = v().state.selection.main
-      v().dispatch({ effects: markBorrowed.of({ from: r.from, to: r.to, borrowed: true }) })
-      this.status.update()
-      if (this.path) api.setAuthorship(this.path, { borrowed: this.editor.borrowed })
-    })
-    add('markMine', 'Mark Selection as Mine', () => {
-      const r = v().state.selection.main
-      v().dispatch({ effects: markBorrowed.of({ from: r.from, to: r.to, borrowed: false }) })
-      this.status.update()
-      if (this.path) api.setAuthorship(this.path, { borrowed: this.editor.borrowed })
-    })
-
+      if (r.empty) return toast('Select the text to credit first.')
+      v().dispatch({ effects: markAs.of({ from: r.from, to: r.to, author: id }) })
+      this.authorshipChanged()
+    }, true)
+    add('markMine', 'Mark Selection as Mine', () => this.run('markAs', ''))
+    add('markPasted', 'Mark Selection as Pasted', () => this.run('markAs', this.settings.authorship.pasteAuthor || 'pasted'))
+    add('newAuthor', 'New Author…', () => this.newAuthor())
+    add('pasteEdits', 'Paste Edits From', async (authorId: string) => {
+      const id = authorId === 'new' ? (await this.newAuthor())?.id : authorId
+      if (!id) return
+      pasteEdits(v(), await navigator.clipboard.readText(), id)
+      this.authorshipChanged()
+    }, true)
+    add('toggleAuthors', 'Toggle Show Authors', () => this.set({ authorship: { ...s().authorship, showBorrowed: !s().authorship.showBorrowed } }))
     add('bold', 'Bold', () => toggleWrap(v(), '**'))
     add('italic', 'Italic', () => toggleWrap(v(), '_'))
     add('strike', 'Strikethrough', () => toggleWrap(v(), '~~'))

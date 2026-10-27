@@ -141,11 +141,25 @@ export function buildMenu(openRecent: (path: string) => void) {
         {
           label: 'Authorship',
           submenu: [
-            item('Mark Selection as Borrowed', 'markBorrowed'),
-            item('Mark Selection as Mine', 'markMine'),
-            toggle('Highlight Borrowed Text', s.authorship.showBorrowed, () => ({
+            {
+              label: 'Mark As',
+              submenu: [
+                item(s.authorship.author || 'Me', 'markAs', 'CmdOrCtrl+Alt+M', ''),
+                ...(s.authorship.authors.length ? [sep] : []),
+                ...s.authorship.authors.map((a) => item(a.name, 'markAs', undefined, a.id)),
+                sep,
+                item('New Author…', 'markAs', undefined, 'new')
+              ]
+            },
+            {
+              label: 'Paste Edits From',
+              submenu: [...s.authorship.authors.map((a) => item(a.name, 'pasteEdits', undefined, a.id)), ...(s.authorship.authors.length ? [sep] : []), item('New Author…', 'pasteEdits', undefined, 'new')]
+            },
+            sep,
+            toggle('Show Authors', s.authorship.showBorrowed, () => ({
               authorship: { ...getSettings().authorship, showBorrowed: !getSettings().authorship.showBorrowed }
-            }))
+            })),
+            item('Authorship Settings…', 'preferences', undefined, 'authorship')
           ]
         },
         toggle('Check Spelling While Typing', s.spellcheck, () => ({ spellcheck: !getSettings().spellcheck })),

@@ -11,7 +11,7 @@ import sup from 'markdown-it-sup'
 import katex from 'katex'
 import hljs from 'highlight.js/lib/common'
 import DOMPurify from 'dompurify'
-import { parseFrontMatter, splitFrontMatter, TAG_RE } from '@shared/text'
+import { parseFrontMatter, splitAuthorship, splitFrontMatter, TAG_RE } from '@shared/text'
 import { CONTENT_BLOCK_RE } from '../editor/markup'
 
 export interface RenderContext {
@@ -147,7 +147,7 @@ export async function expandContentBlocks(md: string, ctx: RenderContext, depth 
     const ext = clean.split('.').pop()!.toLowerCase()
     if (TEXT_EXT.test(clean)) {
       if (depth >= 4) continue
-      out.push('', await expandContentBlocks(splitFrontMatter(text).body, ctx, depth + 1, path), '')
+      out.push('', await expandContentBlocks(splitFrontMatter(splitAuthorship(text).body).body, ctx, depth + 1, path), '')
     } else if (TABLE_EXT.test(clean)) {
       out.push('', csvTable(parseCsv(text, ext === 'tsv' ? '\t' : ','), caption), '')
     } else {

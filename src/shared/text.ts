@@ -72,3 +72,14 @@ export function fileNameFromTitle(title: string): string {
   const clean = title.replace(/[\\/:*?"<>|#^[\]]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80)
   return clean || 'Untitled'
 }
+
+// ------------------------------------------------------------------ authorship block
+
+const AUTHORSHIP_RE = /\n*<!-- Authorship · FOSS Write\n([\s\S]*?)\n-->\s*$/
+
+/** Separates a document's text from its trailing authorship block, if any. */
+export function splitAuthorship(text: string): { body: string; block: string | null } {
+  const m = AUTHORSHIP_RE.exec(text)
+  if (!m) return { body: text, block: null }
+  return { body: text.slice(0, m.index) + '\n', block: m[1] }
+}
