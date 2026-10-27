@@ -1,7 +1,7 @@
 // Exercises content blocks and every exporter against a temporary library.
 // Usage: node test/e2e/exports.mjs <outDir> [path/to/some.iatemplate]
 import { _electron as electron } from 'playwright-core'
-import { mkdtempSync, writeFileSync, mkdirSync, statSync, cpSync, existsSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, mkdirSync, statSync, cpSync, existsSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, basename } from 'node:path'
 
@@ -84,6 +84,12 @@ if (ia) {
   await win.evaluate(([t, tp]) => window.fw.exportTo('pdf', t, tp), [target, ia.split(':')[0]])
   console.log('OK   pdf with imported iA template', statSync(target).size, 'bytes')
 }
+
+await win.evaluate(() => window.fw.set({ page: { orientation: 'landscape', margins: { top: 25, right: 25, bottom: 25, left: 25 }, header: false, footer: false } }))
+const landscape = join(out, 'export-landscape.pdf')
+await win.evaluate((t) => window.fw.exportTo('pdf', t, 'classic'), landscape)
+const box = /MediaBox\s*\[\s*0 0 ([\d.]+) ([\d.]+)/.exec(readFileSync(landscape, 'latin1'))
+console.log(box && Number(box[1]) > Number(box[2]) ? 'OK   page setup: landscape PDF' : 'FAIL page setup: landscape PDF ' + box?.[0])
 
 await win.evaluate(() => window.fw.set({ showPreview: true }))
 await win.waitForTimeout(1500)

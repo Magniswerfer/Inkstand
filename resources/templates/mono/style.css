@@ -23,5 +23,5 @@ blockquote::before { content: '>'; position: absolute; left: 0; color: var(--mut
 @media print {
   html { background: white; }
   body { font-size: 10pt; }
-  article { padding: 0 1in; max-width: none; }
+  article { padding: 0; max-width: none; }
 }

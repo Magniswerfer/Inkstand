@@ -56,6 +56,7 @@ const api: FossWriteApi = {
 
   exportPdf: invoke('export:pdf'),
   print: invoke('print'),
+  share: invoke('share'),
   copyRich: invoke('clipboard:rich'),
 
   listVersions: invoke('versions:list'),

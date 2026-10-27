@@ -39,7 +39,7 @@ export class Preview {
 
   onSettings(prev: Settings) {
     const s = this.app.settings
-    if (prev.previewTemplate !== s.previewTemplate || prev.theme !== s.theme || prev.previewZoom !== s.previewZoom || prev.pdfPaper !== s.pdfPaper) this.loadedKey = ''
+    if (prev.previewTemplate !== s.previewTemplate || prev.theme !== s.theme || prev.previewZoom !== s.previewZoom || prev.pdfPaper !== s.pdfPaper || JSON.stringify(prev.page) !== JSON.stringify(s.page)) this.loadedKey = ''
     const content = JSON.stringify(prev.markdown) !== JSON.stringify(s.markdown) || JSON.stringify(prev.links) !== JSON.stringify(s.links)
     if (s.showPreview && (!prev.showPreview || this.loadedKey === '' || content)) this.schedule(true)
   }
@@ -58,13 +58,13 @@ export class Preview {
     const theme = resolvedTheme(this.app.settings)
     const t = this.template(this.app.settings.previewTemplate)
     const page = this.app.settings.previewZoom === 'page'
-    const key = `${t?.id}|${theme}|${page ? this.app.settings.pdfPaper : 'width'}`
+    const key = `${t?.id}|${theme}|${page ? JSON.stringify([this.app.settings.pdfPaper, this.app.settings.page]) : 'width'}`
     const doc = this.frame.contentDocument
     const target = doc?.querySelector('[data-document]') ?? doc?.body
     if (key !== this.loadedKey || !target) {
       // Full reload only when the template or theme changes; otherwise patch the body to avoid flicker.
       this.loadedKey = key
-      this.frame.srcdoc = buildPage(t, rendered, this.app.title, { theme, titlePage: false, extraCss: PREVIEW_CSS + (page ? pageCss(this.app.settings.pdfPaper) : '') })
+      this.frame.srcdoc = buildPage(t, rendered, this.app.title, { theme, titlePage: false, extraCss: PREVIEW_CSS + (page ? pageCss(this.app.settings) : '') })
       this.frame.onload = () => {
         this.attach()
         this.syncScroll()
@@ -85,7 +85,7 @@ export class Preview {
       doc.documentElement.style.removeProperty('zoom')
       return
     }
-    const [w, h] = PAPER[this.app.settings.pdfPaper]
+    const [w, h] = paperSize(this.app.settings)
     const zoom = Math.min((this.frame.clientWidth - 32) / w, (this.frame.clientHeight - 32) / h)
     doc.documentElement.style.setProperty('zoom', String(Math.max(0.2, Math.min(zoom, 1.5))))
   }
@@ -157,16 +157,23 @@ const PREVIEW_CSS = `
 /** Paper sizes in CSS pixels (96 per inch). */
 const PAPER: Record<Settings['pdfPaper'], [number, number]> = { A4: [794, 1123], Letter: [816, 1056], Legal: [816, 1344], A5: [559, 794] }
 
+function paperSize(s: Settings): [number, number] {
+  const [w, h] = PAPER[s.pdfPaper]
+  return s.page.orientation === 'landscape' ? [h, w] : [w, h]
+}
+
 /** Shows the document as sheets of paper, with a faint line where each page ends. */
-function pageCss(paper: Settings['pdfPaper']) {
-  const [w, h] = PAPER[paper]
+function pageCss(s: Settings) {
+  const [w, h] = paperSize(s)
+  const mm = (v: number) => Math.round((v * 96) / 25.4)
+  const m = s.page.margins
   return `
   html { background: #d9d9d9 !important; }
   html[data-theme='dark'] { background: #0b0b0b !important; }
   body { margin: 0 !important; padding: 16px 0 !important; background: transparent !important; }
   [data-document] {
     box-sizing: border-box; width: ${w}px !important; max-width: none !important; min-height: ${h}px;
-    margin: 0 auto !important; padding: 72px 76px !important; background-color: #fff;
+    margin: 0 auto !important; padding: ${mm(m.top)}px ${mm(m.right)}px ${mm(m.bottom)}px ${mm(m.left)}px !important; background-color: #fff;
     box-shadow: 0 1px 4px rgba(0,0,0,.18), 0 8px 24px rgba(0,0,0,.08);
     background-image: repeating-linear-gradient(to bottom, transparent 0, transparent ${h - 1}px, rgba(0,0,0,.14) ${h - 1}px, rgba(0,0,0,.14) ${h}px);
   }

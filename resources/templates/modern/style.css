@@ -19,5 +19,5 @@ th { background: rgba(128, 128, 128, 0.07); }
 @media print {
   html { background: white; }
   body { font-size: 10.5pt; }
-  article { padding: 0 0.85in; max-width: none; }
+  article { padding: 0; max-width: none; }
 }

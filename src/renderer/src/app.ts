@@ -24,7 +24,7 @@ import { StatusBar } from './ui/statusbar'
 import { Palette } from './ui/palette'
 import { openPreferences } from './ui/prefs'
 import { openVersions } from './ui/versions'
-import { openExport, quickExport, copyAs, exportTo } from './ui/export'
+import { openExport, openPageSetup, printPlainText, quickExport, copyAs, exportTo } from './ui/export'
 import { openPublish } from './ui/publish'
 import { openCheatsheet, guideText } from './ui/help'
 import { openGetInfo } from './ui/info'
@@ -370,22 +370,21 @@ export class App {
     if (raw == null) return
     const disk = (await parseAuthorship(raw)).body
     if (disk === this.saved) return
-    if (!this.dirty) {
-      this.saved = disk
-      this.editor.replaceDoc(disk)
+    // Another app or a URL command changed the file: take its text and its authorship.
+    const reload = async () => {
+      const doc = await this.load(path, raw)
+      this.saved = doc.text
+      this.editor.replaceDoc(doc.text, doc.spans)
       this.updateState()
-      return
+      this.status.update()
     }
+    if (!this.dirty) return reload()
     const choice = await api.confirm({
       message: `“${basename(path)}” changed on disk.`,
       detail: 'Do you want to reload it and lose your unsaved changes, or keep your version?',
       buttons: ['Keep My Version', 'Reload']
     })
-    if (choice === 1) {
-      this.saved = disk
-      this.editor.replaceDoc(disk)
-      this.updateState()
-    }
+    if (choice === 1) await reload()
   }
 
   /** Moves the open document on disk without reloading it. */
@@ -614,7 +613,7 @@ export class App {
       await this.open(paths[0])
       for (const p of paths.slice(1)) api.newWindow(p)
     })
-    add('quickOpen', 'Quick Open…', () => this.palette.quickOpen())
+    add('quickOpen', 'Quick Open…', (query?: string) => this.palette.quickOpen(typeof query === 'string' ? query : ''))
     add('palette', 'Command Palette…', () => this.palette.commands(), true)
     add('addLocation', 'Add Library Folder…', () => this.library.addLocation())
     add('save', 'Save', () => this.save())
@@ -668,6 +667,12 @@ export class App {
     add('export', 'Export…', (format?: string) => (format ? quickExport(this, format as any) : openExport(this)))
     add('publish', 'Publish…', () => openPublish(this))
     add('print', 'Print…', () => quickExport(this, 'print'))
+    add('printPlain', 'Print Plain Text…', () => printPlainText(this))
+    add('pageSetup', 'Page Setup…', () => openPageSetup(this))
+    add('share', 'Share…', async () => {
+      if (!this.path) await this.save()
+      if (this.path) api.share(this.path)
+    })
     add('preferences', 'Settings…', (tab?: string) => openPreferences(this, tab))
 
     add('undo', 'Undo', () => this.editor.undo(), true)

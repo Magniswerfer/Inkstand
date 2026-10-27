@@ -53,6 +53,7 @@ export function openPreferences(app: App, initialTab = 'general') {
           row('Speaking speed', num('speakingWordsPerMinute', 60, 300, 5), 'Words per minute, for speaking time.'),
           row('Words per page', num('wordsPerPage', 100, 800, 5)),
           row('Autosave', bool('autosave'), 'Save changes automatically as you write.'),
+          row('URL commands', urlTokenControl(app), 'Other apps and Shortcuts can open, create, read and write documents with foss-write:// links. Reading and writing need this token.'),
           row('New file extension', select('defaultExtension', [['md', '.md'], ['markdown', '.markdown'], ['txt', '.txt']]))
         )
     ],
@@ -176,6 +177,21 @@ function authorshipTab(app: App) {
       )
     }
     wrap.append(h('div', { class: 'fw-actions left' }, h('button', { onclick: async () => (await app.newAuthor(), render()) }, 'Add Author…')))
+  }
+  render()
+  return wrap
+}
+
+function urlTokenControl(app: App) {
+  const wrap = h('span', { class: 'pf-inline' })
+  const render = () => {
+    clear(wrap)
+    const token = app.settings.urlToken
+    wrap.append(h('code', { class: 'pf-token' }, token || '—'))
+    if (token) wrap.append(h('button', { onclick: () => navigator.clipboard.writeText(token).then(() => toast('Copied token.')) }, 'Copy'))
+    wrap.append(
+      h('button', { onclick: async () => (await app.set({ urlToken: crypto.randomUUID().replace(/-/g, '').slice(0, 24) }), render()) }, token ? 'Regenerate' : 'Create Token')
+    )
   }
   render()
   return wrap

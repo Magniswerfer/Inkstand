@@ -17,5 +17,5 @@ a { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: 2
 @media print {
   html { background: white; }
   body { font-size: 11.5pt; }
-  article { padding: 0 0.9in; max-width: none; }
+  article { padding: 0; max-width: none; }
 }

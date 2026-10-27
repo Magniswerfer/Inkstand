@@ -24,6 +24,7 @@ async function pdfOptions(app: App, templateId = app.settings.exportTemplate): P
   const r = await app.render()
   const values = partValues(r, app.title)
   return {
+    page: app.settings.page,
     html: buildPage(t, r, app.title, { theme: 'light', titlePage: true }),
     baseUrl: t?.baseUrl ?? 'fw-vendor://app/',
     title: values.title,
@@ -137,4 +138,53 @@ export async function copyAs(app: App, kind: 'html' | 'rich') {
     await api.copyRich(r.html, sel || app.text)
     toast('Copied as rich text.')
   }
+}
+
+/** Prints the Markdown source as plain text, in the editor's font, with no template. */
+export async function printPlainText(app: App) {
+  const escape = (t: string) => t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]!)
+  const font = getComputedStyle(document.documentElement).getPropertyValue('--fw-font')
+  const html = `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="fw-vendor://app/fonts.css"><title>${escape(app.title)}</title>
+<style>body { margin: 0; } pre { font: 10.5pt/1.6 ${font}; white-space: pre-wrap; word-wrap: break-word; margin: 0; }</style></head>
+<body><pre>${escape(app.text)}</pre></body></html>`
+  await api.print({ page: { ...app.settings.page, header: false, footer: false }, html, baseUrl: 'fw-vendor://app/', title: app.title, headerHtml: '', footerHtml: '', headerHeight: 0, footerHeight: 0, paper: app.settings.pdfPaper })
+}
+
+/** Page Setup: paper, orientation, margins, and whether templates' headers and footers print. */
+export function openPageSetup(app: App) {
+  const p = app.settings.page
+  const papers = ['A4', 'Letter', 'Legal', 'A5'] as const
+  const paper = h('select', null, papers.map((x) => h('option', { selected: app.settings.pdfPaper === x }, x)))
+  const orientation = h('select', null, h('option', { value: 'portrait', selected: p.orientation === 'portrait' }, 'Portrait'), h('option', { value: 'landscape', selected: p.orientation === 'landscape' }, 'Landscape'))
+  const margin = (v: number) => h('input', { type: 'number', min: 0, max: 80, step: 1, value: String(v), style: 'width: 5em' })
+  const top = margin(p.margins.top)
+  const right = margin(p.margins.right)
+  const bottom = margin(p.margins.bottom)
+  const left = margin(p.margins.left)
+  const header = h('input', { type: 'checkbox', checked: p.header })
+  const footer = h('input', { type: 'checkbox', checked: p.footer })
+  const row = (label: string, ...els: (HTMLElement | string)[]) => h('label', { class: 'pf-row' }, h('span', { class: 'pf-label' }, label), h('span', { class: 'pf-inline' }, ...els))
+  const form = h(
+    'form',
+    {
+      class: 'fw-prompt',
+      onsubmit: async (e: Event) => {
+        e.preventDefault()
+        const n = (el: HTMLInputElement) => Math.max(0, Math.min(80, Number(el.value) || 0))
+        await app.set({
+          pdfPaper: papers[paper.selectedIndex],
+          page: { orientation: orientation.value as 'portrait' | 'landscape', margins: { top: n(top), right: n(right), bottom: n(bottom), left: n(left) }, header: header.checked, footer: footer.checked }
+        })
+        m.close()
+      }
+    },
+    row('Paper size', paper),
+    row('Orientation', orientation),
+    row('Margins (mm)', 'Top ', top, ' Bottom ', bottom),
+    row('', 'Left ', left, ' Right ', right),
+    row('Print header', header),
+    row('Print footer', footer),
+    h('div', { class: 'fw-actions' }, h('button', { type: 'button', onclick: () => m.close() }, 'Cancel'), h('button', { type: 'submit', class: 'primary' }, 'OK'))
+  )
+  const m = modal('Page Setup', form)
 }

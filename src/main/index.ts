@@ -1,4 +1,4 @@
-import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeTheme, net, protocol, shell, type IpcMainInvokeEvent, type WebContents } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeTheme, net, protocol, shell, ShareMenu, type IpcMainInvokeEvent, type WebContents } from 'electron'
 import { promises as fs, watch, type FSWatcher } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -11,6 +11,7 @@ import { importTemplate, listTemplates, removeTemplate, templateFile, userTempla
 import { getAuthorship, listVersions, moveVersions, readVersion, saveVersion, setAuthorship } from './versions'
 import { publish } from './publish'
 import { resourcePath } from './paths'
+import { handleUrl, SCHEME, type UrlHost } from './urlcommands'
 import { buildMenu } from './menu'
 
 protocol.registerSchemesAsPrivileged([
@@ -157,6 +158,39 @@ function openPath(path: string) {
   } else createWindow(path)
 }
 
+const pendingUrls: string[] = []
+const urlHost: UrlHost = {
+  // Like iA Writer: open in the current window unless new-window=true.
+  open: (path, newWindow) => {
+    const existing = BrowserWindow.getAllWindows().find((w) => docs.get(w.webContents.id)?.path === path)
+    if (existing) return existing.focus()
+    const win = !newWindow && (BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0])
+    if (!win) return createWindow(path)
+    win.webContents.send('open-file', path)
+    win.focus()
+  },
+  newDocument: (newWindow) => {
+    const win = !newWindow && (BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0])
+    if (win) {
+      win.webContents.send('menu', 'new')
+      win.focus()
+    } else createWindow()
+  },
+  quickSearch: (query) => {
+    const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0] ?? createWindow()
+    const send = () => win.webContents.send('menu', 'quickOpen', query)
+    if (win.webContents.isLoading()) win.webContents.once('did-finish-load', () => setTimeout(send, 300))
+    else send()
+    win.focus()
+  }
+}
+
+app.on('open-url', (e, url) => {
+  e.preventDefault()
+  if (app.isReady()) handleUrl(url, urlHost)
+  else pendingUrls.push(url)
+})
+
 app.on('open-file', (e, path) => {
   e.preventDefault()
   if (app.isReady()) openPath(path)
@@ -166,9 +200,11 @@ app.on('open-file', (e, path) => {
 // Second launches (Windows/Linux file associations, CLI) hand their files to us.
 if (!app.requestSingleInstanceLock()) app.quit()
 app.on('second-instance', (_e, argv) => {
+  const urls = argv.filter((a) => a.startsWith(SCHEME + '://'))
+  urls.forEach((u) => handleUrl(u, urlHost))
   const files = argv.slice(1).filter((a) => isTextFile(a))
   if (files.length) files.forEach(openPath)
-  else createWindow()
+  else if (!urls.length) createWindow()
 })
 
 const handle = <A extends unknown[], R>(channel: string, fn: (e: IpcMainInvokeEvent, ...args: A) => R) =>
@@ -196,9 +232,9 @@ async function renderPdfWindow(opts: PdfOptions) {
   return win
 }
 
-function headerFooter(html: string, height: number) {
+function headerFooter(html: string, height: number, sideMarginMm: number) {
   if (!html.trim()) return '<span></span>'
-  return `<div style="width:100%;height:${height}px;font-size:9px;font-family:-apple-system,'Helvetica Neue',sans-serif;color:#777;padding:0 0.75in;display:flex;align-items:center;-webkit-print-color-adjust:exact">${html}</div>`
+  return `<div style="width:100%;height:${height}px;font-size:9px;font-family:-apple-system,'Helvetica Neue',sans-serif;color:#777;padding:0 ${sideMarginMm}mm;display:flex;align-items:center;-webkit-print-color-adjust:exact">${html}</div>`
 }
 
 app.whenReady().then(async () => {
@@ -345,13 +381,23 @@ app.whenReady().then(async () => {
   handle('export:pdf', async (_e, opts: PdfOptions, target: string) => {
     const win = await renderPdfWindow(opts)
     try {
+      const { page } = opts
+      const header = page.header ? opts.headerHtml : ''
+      const footer = page.footer ? opts.footerHtml : ''
+      const inch = (mm: number) => mm / 25.4
       const pdf = await win.webContents.printToPDF({
         pageSize: opts.paper,
+        landscape: page.orientation === 'landscape',
         printBackground: true,
-        displayHeaderFooter: !!(opts.headerHtml || opts.footerHtml),
-        headerTemplate: headerFooter(opts.headerHtml, opts.headerHeight),
-        footerTemplate: headerFooter(opts.footerHtml, opts.footerHeight),
-        margins: { top: Math.max(0.6, opts.headerHeight / 96), bottom: Math.max(0.6, opts.footerHeight / 96), left: 0, right: 0 }
+        displayHeaderFooter: !!(header || footer),
+        headerTemplate: headerFooter(header, opts.headerHeight, page.margins.left),
+        footerTemplate: headerFooter(footer, opts.footerHeight, page.margins.left),
+        margins: {
+          top: Math.max(inch(page.margins.top), header ? opts.headerHeight / 96 : 0),
+          bottom: Math.max(inch(page.margins.bottom), footer ? opts.footerHeight / 96 : 0),
+          left: inch(page.margins.left),
+          right: inch(page.margins.right)
+        }
       })
       await fs.writeFile(target, pdf)
     } finally {
@@ -360,7 +406,21 @@ app.whenReady().then(async () => {
   })
   handle('print', async (_e, opts: PdfOptions) => {
     const win = await renderPdfWindow(opts)
-    win.webContents.print({ printBackground: true }, () => win.destroy())
+    const px = (mm: number) => Math.round((mm * 96) / 25.4)
+    const { margins } = opts.page
+    win.webContents.print(
+      {
+        printBackground: true,
+        landscape: opts.page.orientation === 'landscape',
+        pageSize: opts.paper,
+        margins: { marginType: 'custom', top: px(margins.top), bottom: px(margins.bottom), left: px(margins.left), right: px(margins.right) }
+      },
+      () => win.destroy()
+    )
+  })
+  handle('share', async (e, path: string) => {
+    if (process.platform !== 'darwin') return shell.showItemInFolder(path)
+    new ShareMenu({ filePaths: [path] }).popup({ window: BrowserWindow.fromWebContents(e.sender) ?? undefined })
   })
   handle('clipboard:rich', (_e, html: string, text: string) => clipboard.write({ html, text }))
 
@@ -392,10 +452,25 @@ app.whenReady().then(async () => {
     menuTimer = setTimeout(() => buildMenu(openPath), 50)
   })
 
+  // Tests drive URL commands directly instead of through the OS.
+  if (headless) (globalThis as any).__fwHandleUrl = (url: string) => handleUrl(url, urlHost)
+  // Packaged builds own the foss-write:// scheme; development runs never claim it.
+  if (app.isPackaged) app.setAsDefaultProtocolClient(SCHEME)
+  if (process.platform === 'darwin' && !headless) {
+    app.dock?.setMenu(
+      Menu.buildFromTemplate([
+        { label: 'New Document', click: () => urlHost.newDocument(false) },
+        { label: 'New Window', click: () => createWindow() }
+      ])
+    )
+  }
+
   const argvFiles = process.argv.slice(1).filter((a) => isTextFile(a) && !a.startsWith('-'))
+  const urls = [...pendingUrls, ...process.argv.filter((a) => a.startsWith(SCHEME + '://'))]
   const initial = [...pendingOpen, ...argvFiles]
   if (initial.length) initial.forEach((p) => createWindow(p))
-  else createWindow(undefined, true)
+  else createWindow(undefined, !urls.length)
+  urls.forEach((u) => handleUrl(u, urlHost))
 
   app.on('activate', () => {
     if (!BrowserWindow.getAllWindows().length) createWindow()

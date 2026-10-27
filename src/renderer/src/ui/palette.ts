@@ -16,9 +16,9 @@ export class Palette {
 
   constructor(private app: App) {}
 
-  pick(placeholder: string, items: PaletteItem[], onPick: (item: PaletteItem) => void, opts: { onEmptyEnter?: (q: string) => void } = {}) {
+  pick(placeholder: string, items: PaletteItem[], onPick: (item: PaletteItem) => void, opts: { onEmptyEnter?: (q: string) => void; query?: string } = {}) {
     this.close()
-    const input = h('input', { class: 'pl-input', placeholder, spellcheck: 'false', 'aria-label': placeholder })
+    const input = h('input', { class: 'pl-input', placeholder, spellcheck: 'false', 'aria-label': placeholder, value: opts.query ?? '' })
     const list = h('div', { class: 'pl-list', role: 'listbox' })
     let shown: PaletteItem[] = []
     let index = 0
@@ -83,7 +83,7 @@ export class Palette {
     this.el = null
   }
 
-  quickOpen() {
+  quickOpen(query = '') {
     const recent = this.app.settings.recent
     const files = this.app.files.filter((f) => isTextFile(f.name))
     const seen = new Set(files.map((f) => f.path))
@@ -97,6 +97,7 @@ export class Palette {
       })
       .map((f) => ({ label: stripExt(f.name), detail: dirname(f.path).replace(/^\/Users\/[^/]+/, '~'), hint: f.mtime ? relativeTime(f.mtime) : '', data: f.path }))
     this.pick('Open document…', items, (it) => this.app.open(it.data as string), {
+      query,
       onEmptyEnter: (q) => {
         const dir = this.app.library.saveFolder()
         if (dir) this.app.newDocument(dir, `# ${q}\n\n`)

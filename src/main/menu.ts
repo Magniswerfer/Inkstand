@@ -91,7 +91,11 @@ export function buildMenu(openRecent: (path: string) => void) {
           ]
         },
         item('Publish…', 'publish'),
+        ...(isMac ? [item('Share…', 'share')] : []),
+        sep,
+        item('Page Setup…', 'pageSetup', 'CmdOrCtrl+Alt+P'),
         item('Print…', 'print', 'CmdOrCtrl+P'),
+        item('Print Plain Text…', 'printPlain'),
         sep,
         isMac ? { role: 'close' } : { role: 'quit' }
       ]

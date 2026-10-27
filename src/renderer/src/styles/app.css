@@ -1288,3 +1288,18 @@ button.link {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+.pf-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-soft);
+}
+
+.pf-token {
+  font: 12px 'iA Writer Mono S', ui-monospace, monospace;
+  background: var(--faint);
+  padding: 3px 6px;
+  border-radius: 5px;
+  user-select: all;
+}

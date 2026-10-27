@@ -196,10 +196,15 @@ export class Editor {
   }
 
   /** Replaces the text but keeps undo history (reload after an external change). */
-  replaceDoc(text: string) {
+  replaceDoc(text: string, spans?: Span[]) {
     const { state } = this.view
     const head = Math.min(state.selection.main.head, text.length)
-    this.view.dispatch({ changes: { from: 0, to: state.doc.length, insert: text }, selection: { anchor: head }, userEvent: 'reload' })
+    this.view.dispatch({
+      changes: { from: 0, to: state.doc.length, insert: text },
+      selection: { anchor: head },
+      effects: spans ? setSpans.of(spans.filter(([, b]) => b <= text.length)) : [],
+      userEvent: 'reload'
+    })
   }
 
   get text() {

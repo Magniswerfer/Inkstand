@@ -142,6 +142,15 @@ export interface Settings {
   autosave: boolean
   defaultExtension: 'md' | 'markdown' | 'txt'
   publishAccounts: PublishAccount[]
+  /** Secret for URL commands that read or write documents. */
+  urlToken: string
+  page: {
+    orientation: 'portrait' | 'landscape'
+    /** Margins in millimetres. */
+    margins: { top: number; right: number; bottom: number; left: number }
+    header: boolean
+    footer: boolean
+  }
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -204,7 +213,9 @@ export const DEFAULT_SETTINGS: Settings = {
   versions: { enabled: true, intervalMinutes: 10, max: 200 },
   autosave: true,
   defaultExtension: 'md',
-  publishAccounts: []
+  publishAccounts: [],
+  urlToken: '',
+  page: { orientation: 'portrait', margins: { top: 20, right: 20, bottom: 20, left: 20 }, header: true, footer: true }
 }
 
 export interface DirEntry {
@@ -263,6 +274,7 @@ export interface Authorship {
 }
 
 export interface PdfOptions {
+  page: Settings['page']
   html: string
   baseUrl: string
   title: string
@@ -335,6 +347,7 @@ export interface FossWriteApi {
 
   exportPdf(opts: PdfOptions, target: string): Promise<void>
   print(opts: PdfOptions): Promise<void>
+  share(path: string): Promise<void>
   copyRich(html: string, text: string): Promise<void>
 
   listVersions(path: string): Promise<VersionInfo[]>

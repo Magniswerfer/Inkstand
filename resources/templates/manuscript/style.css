@@ -15,4 +15,4 @@ a { color: inherit; }
 .title-block h1 { margin: 0; text-transform: uppercase; }
 .title-block p { text-indent: 0; margin: 0; }
 .title-block p:empty { display: none; }
-@media print { article { padding: 0; max-width: none; margin: 0 1in; } }
+@media print { article { padding: 0; max-width: none; margin: 0; } }
