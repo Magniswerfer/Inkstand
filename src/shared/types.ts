@@ -34,6 +34,8 @@ export interface PublishAccount {
 }
 
 export interface Settings {
+  /** Bumped when defaults change, so untouched old defaults can be migrated. */
+  settingsVersion: number
   theme: Theme
   font: FontChoice
   customFont: string
@@ -85,13 +87,14 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+  settingsVersion: 2,
   theme: 'system',
   font: 'duo',
   customFont: '',
-  fontSize: 18,
-  lineHeight: 1.6,
+  fontSize: 19,
+  lineHeight: 1.65,
   lineWidth: 'medium',
-  markup: 'dim',
+  markup: 'show',
   hangingHeadings: true,
   focusMode: 'off',
   typewriter: false,

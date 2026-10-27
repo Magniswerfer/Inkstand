@@ -42,8 +42,10 @@ body.typing #editor .cm-scroller::-webkit-scrollbar-thumb {
   padding: 0 clamp(24px, 6vw, 96px);
 }
 
+/* Centring the first or last line needs at least half a window of room above or below it. */
 #editor .cm-fw-typewriter .cm-content {
-  padding-top: 45vh;
+  padding-top: 50vh;
+  padding-bottom: 50vh;
 }
 
 #editor .cm-line {
@@ -122,8 +124,21 @@ body.typing #editor .cm-scroller::-webkit-scrollbar-thumb {
   text-decoration: none;
 }
 
-.cm-fw-markup-show .cm-fw-mark {
+/* Show mode, iA Writer's default: markup is plain text in the text colour; "#" stays bold in headings. */
+.cm-fw-markup-show .cm-fw-mark,
+.cm-fw-markup-show .cm-fw-mark *,
+.cm-fw-markup-show .cm-fw-t-mark {
   color: inherit;
+}
+
+.cm-fw-markup-show .cm-fw-heading .cm-fw-mark {
+  font-weight: inherit;
+}
+
+/* Link targets and fences stay quiet even when markup is shown. */
+.cm-fw-markup-show .cm-fw-t-url,
+.cm-fw-markup-show .cm-fw-t-meta {
+  color: var(--fg-soft);
 }
 
 .cm-fw-t-comment {

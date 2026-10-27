@@ -255,7 +255,7 @@ export function buildMenu(openRecent: (path: string) => void) {
         },
         { label: 'Bigger', accelerator: 'CmdOrCtrl+=', click: () => setSettings({ fontSize: Math.min(40, getSettings().fontSize + 1) }) },
         { label: 'Smaller', accelerator: 'CmdOrCtrl+-', click: () => setSettings({ fontSize: Math.max(10, getSettings().fontSize - 1) }) },
-        { label: 'Actual Size', click: () => setSettings({ fontSize: 18 }) },
+        { label: 'Actual Size', click: () => setSettings({ fontSize: 19 }) },
         sep,
         { role: 'togglefullscreen' },
         ...(app.isPackaged ? [] : [{ role: 'toggleDevTools' } as MenuItemConstructorOptions, { role: 'reload' } as MenuItemConstructorOptions])

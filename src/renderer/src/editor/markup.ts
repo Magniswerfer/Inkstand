@@ -16,8 +16,9 @@ const highlightDeco = Decoration.mark({ class: 'cm-fw-highlight' })
 const blockDeco = Decoration.line({ class: 'cm-fw-block', attributes: { spellcheck: 'false' } })
 const noSpellDeco = Decoration.mark({ class: 'cm-fw-mark', attributes: { spellcheck: 'false' } })
 const frontMatterDeco = Decoration.line({ class: 'cm-fw-frontmatter' })
-const headingLine = (level: number, marks: string) =>
-  Decoration.line({ class: `cm-fw-heading cm-fw-h${level}`, attributes: { style: `text-indent: -${textWidth(marks)}px` } })
+/** Heading marks are bold only when markup is shown in the text colour. */
+const headingLine = (level: number, marks: string, bold: boolean) =>
+  Decoration.line({ class: `cm-fw-heading cm-fw-h${level}`, attributes: { style: `text-indent: -${textWidth(marks, bold)}px` } })
 /** Wrapped lines of list items and quotes line up with the text, not the marker. */
 const hangingLine = (prefix: string) => {
   const w = textWidth(prefix)
@@ -70,7 +71,7 @@ function build(view: EditorView, mode: MarkupMode, hanging: boolean): Decoration
           const line = state.doc.lineAt(node.from)
           const m = /^#{1,6}\s?/.exec(line.text)
           if (m) {
-            if (hanging && !(active && !active.has(line.number))) decos.push(headingLine(level, m[0]).range(line.from))
+            if (hanging && !(active && !active.has(line.number))) decos.push(headingLine(level, m[0], mode === 'show').range(line.from))
             else decos.push(Decoration.line({ class: `cm-fw-heading cm-fw-h${level}` }).range(line.from))
           }
           return

@@ -1,13 +1,13 @@
 :root {
-  --bg: #ffffff;
-  --fg: #1f1f1f;
+  --bg: #f6f6f6;
+  --fg: #1a1a1a;
   --fg-soft: #6b6b6b;
-  --dim: #c2c2c2;
-  --faint: #f0f0f0;
+  --dim: #bdbdbd;
+  --faint: #ebebeb;
   --accent: #10a5f5;
   --accent-fg: #ffffff;
   --selection: #bfe4fc;
-  --sidebar-bg: #f5f5f5;
+  --sidebar-bg: #eeeeee;
   --sidebar-hover: rgba(0, 0, 0, 0.05);
   --sidebar-active: rgba(16, 165, 245, 0.16);
   --border: #e6e6e6;

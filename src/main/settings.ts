@@ -20,10 +20,23 @@ function merge(base: Settings, patch: Partial<Settings>): Settings {
   return out
 }
 
+/** Moves settings still at an old default onto the new default; values the user chose are kept. */
+function migrate(s: Settings, fromVersion: number): Settings {
+  if (fromVersion < 2) {
+    // v2 matches iA Writer: larger type, markup in the text colour.
+    if (s.fontSize === 17 || s.fontSize === 18) s.fontSize = DEFAULT_SETTINGS.fontSize
+    if (s.lineHeight === 1.6) s.lineHeight = DEFAULT_SETTINGS.lineHeight
+    if (s.markup === 'dim') s.markup = DEFAULT_SETTINGS.markup
+  }
+  s.settingsVersion = DEFAULT_SETTINGS.settingsVersion
+  return s
+}
+
 export function getSettings(): Settings {
   if (current) return current
   try {
-    current = merge(DEFAULT_SETTINGS, JSON.parse(readFileSync(file(), 'utf8')))
+    const raw = JSON.parse(readFileSync(file(), 'utf8'))
+    current = migrate(merge(DEFAULT_SETTINGS, raw), raw.settingsVersion ?? 1)
   } catch {
     current = structuredClone(DEFAULT_SETTINGS)
   }
