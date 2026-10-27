@@ -5,7 +5,7 @@ export type FontChoice = 'mono' | 'duo' | 'sans' | 'serif' | 'custom'
 export type FocusMode = 'off' | 'sentence' | 'paragraph' | 'line'
 export type MarkupMode = 'dim' | 'hide' | 'show'
 export type LineWidth = 'narrow' | 'medium' | 'wide' | 'full'
-export type StatMetric = 'words' | 'characters' | 'sentences' | 'paragraphs' | 'readingTime' | 'pages'
+export type StatMetric = 'words' | 'characters' | 'sentences' | 'paragraphs' | 'readingTime' | 'speakingTime' | 'pages'
 export type SortOrder = 'modified' | 'name' | 'created' | 'size' | 'kind'
 
 export interface CustomPattern {
@@ -91,10 +91,14 @@ export interface Settings {
   showStats: boolean
   statMetric: StatMetric
   wordsPerMinute: number
+  speakingWordsPerMinute: number
   wordsPerPage: number
   showSidebar: boolean
   showOutline: boolean
   showPreview: boolean
+  /** Split: preview beside the editor. Full: preview only. */
+  previewMode: 'split' | 'full'
+  previewZoom: 'width' | 'page'
   previewSync: boolean
   previewTemplate: string
   exportTemplate: string
@@ -152,10 +156,13 @@ export const DEFAULT_SETTINGS: Settings = {
   showStats: true,
   statMetric: 'words',
   wordsPerMinute: 230,
+  speakingWordsPerMinute: 150,
   wordsPerPage: 275,
   showSidebar: true,
   showOutline: false,
   showPreview: false,
+  previewMode: 'split',
+  previewZoom: 'width',
   previewSync: true,
   previewTemplate: 'classic',
   exportTemplate: 'classic',

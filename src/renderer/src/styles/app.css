@@ -257,6 +257,15 @@ button {
   display: block;
 }
 
+/* Full preview: the preview takes the editor's place. */
+.preview-full #editor {
+  display: none;
+}
+
+.preview-full #preview {
+  border-left: none;
+}
+
 #outline {
   display: none;
   width: 230px;

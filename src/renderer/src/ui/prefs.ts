@@ -50,6 +50,7 @@ export function openPreferences(app: App, initialTab = 'general') {
           row('Hanging heading marks', bool('hangingHeadings'), 'Put # marks in the left margin so headings line up with text.'),
           row('Show stats', bool('showStats')),
           row('Reading speed', num('wordsPerMinute', 100, 600, 10), 'Words per minute, for reading time.'),
+          row('Speaking speed', num('speakingWordsPerMinute', 60, 300, 5), 'Words per minute, for speaking time.'),
           row('Words per page', num('wordsPerPage', 100, 800, 5)),
           row('Autosave', bool('autosave'), 'Save changes automatically as you write.'),
           row('New file extension', select('defaultExtension', [['md', '.md'], ['markdown', '.markdown'], ['txt', '.txt']]))

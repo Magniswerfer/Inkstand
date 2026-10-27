@@ -19,6 +19,7 @@ export class Preview {
     root.append(this.frame)
     this.loadTemplates()
     app.editor.view.scrollDOM.addEventListener('scroll', () => this.syncScroll(), { passive: true })
+    new ResizeObserver(() => this.fit()).observe(this.frame)
   }
 
   async loadTemplates() {
@@ -38,8 +39,14 @@ export class Preview {
 
   onSettings(prev: Settings) {
     const s = this.app.settings
-    if (prev.previewTemplate !== s.previewTemplate || prev.theme !== s.theme) this.loadedKey = ''
-    if (s.showPreview && !prev.showPreview) this.schedule(true)
+    if (prev.previewTemplate !== s.previewTemplate || prev.theme !== s.theme || prev.previewZoom !== s.previewZoom || prev.pdfPaper !== s.pdfPaper) this.loadedKey = ''
+    if (s.showPreview && (!prev.showPreview || this.loadedKey === '')) this.schedule(true)
+  }
+
+  /** Re-reads templates from disk and redraws, for when you're editing a template. */
+  async reload() {
+    await this.loadTemplates()
+    this.schedule(true)
   }
 
   schedule = debounce((_force?: boolean) => this.update(), 250)
@@ -49,13 +56,14 @@ export class Preview {
     const rendered = await this.app.render()
     const theme = resolvedTheme(this.app.settings)
     const t = this.template(this.app.settings.previewTemplate)
-    const key = `${t?.id}|${theme}`
+    const page = this.app.settings.previewZoom === 'page'
+    const key = `${t?.id}|${theme}|${page ? this.app.settings.pdfPaper : 'width'}`
     const doc = this.frame.contentDocument
     const target = doc?.querySelector('[data-document]') ?? doc?.body
     if (key !== this.loadedKey || !target) {
       // Full reload only when the template or theme changes; otherwise patch the body to avoid flicker.
       this.loadedKey = key
-      this.frame.srcdoc = buildPage(t, rendered, this.app.title, { theme, titlePage: false, extraCss: PREVIEW_CSS })
+      this.frame.srcdoc = buildPage(t, rendered, this.app.title, { theme, titlePage: false, extraCss: PREVIEW_CSS + (page ? pageCss(this.app.settings.pdfPaper) : '') })
       this.frame.onload = () => {
         this.attach()
         this.syncScroll()
@@ -68,9 +76,23 @@ export class Preview {
     this.syncScroll()
   }
 
+  /** Fit Page: scale the sheet so a whole page fits the pane. */
+  private fit() {
+    const doc = this.frame.contentDocument
+    if (!doc) return
+    if (this.app.settings.previewZoom !== 'page') {
+      doc.documentElement.style.removeProperty('zoom')
+      return
+    }
+    const [w, h] = PAPER[this.app.settings.pdfPaper]
+    const zoom = Math.min((this.frame.clientWidth - 32) / w, (this.frame.clientHeight - 32) / h)
+    doc.documentElement.style.setProperty('zoom', String(Math.max(0.2, Math.min(zoom, 1.5))))
+  }
+
   private attach() {
     const doc = this.frame.contentDocument
     if (!doc) return
+    this.fit()
     doc.addEventListener('click', (e) => {
       const a = (e.target as Element).closest('a')
       if (!a) return
@@ -130,3 +152,24 @@ const PREVIEW_CSS = `
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-thumb { background: rgba(128,128,128,.35); border-radius: 4px; }
 `
+
+/** Paper sizes in CSS pixels (96 per inch). */
+const PAPER: Record<Settings['pdfPaper'], [number, number]> = { A4: [794, 1123], Letter: [816, 1056], Legal: [816, 1344], A5: [559, 794] }
+
+/** Shows the document as sheets of paper, with a faint line where each page ends. */
+function pageCss(paper: Settings['pdfPaper']) {
+  const [w, h] = PAPER[paper]
+  return `
+  html { background: #d9d9d9 !important; }
+  html[data-theme='dark'] { background: #0b0b0b !important; }
+  body { margin: 0 !important; padding: 16px 0 !important; background: transparent !important; }
+  [data-document] {
+    box-sizing: border-box; width: ${w}px !important; max-width: none !important; min-height: ${h}px;
+    margin: 0 auto !important; padding: 72px 76px !important; background-color: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.18), 0 8px 24px rgba(0,0,0,.08);
+    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent ${h - 1}px, rgba(0,0,0,.14) ${h - 1}px, rgba(0,0,0,.14) ${h}px);
+  }
+  html[data-theme='dark'] [data-document] { background-color: #1c1c1c; }
+  body[data-document] { margin: 16px auto !important; }
+`
+}

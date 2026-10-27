@@ -166,6 +166,10 @@ export function buildMenu(openRecent: (path: string) => void) {
             item('Authorship Settings…', 'preferences', undefined, 'authorship')
           ]
         },
+        {
+          label: 'Speech',
+          submenu: [item('Start Speaking', 'startSpeaking', 'CmdOrCtrl+Alt+Shift+S'), item('Stop Speaking', 'stopSpeaking', 'CmdOrCtrl+Alt+Shift+.')]
+        },
         toggle('Check Spelling While Typing', s.spellcheck, () => ({ spellcheck: !getSettings().spellcheck })),
         toggle('Smart Quotes', s.smartQuotes, () => ({ smartQuotes: !getSettings().smartQuotes })),
         toggle('Smart Dashes and Ellipses', s.smartDashes, () => ({ smartDashes: !getSettings().smartDashes })),
@@ -277,6 +281,18 @@ export function buildMenu(openRecent: (path: string) => void) {
         sep,
         toggle('Outline', s.showOutline, () => ({ showOutline: !getSettings().showOutline }), 'CmdOrCtrl+Alt+2'),
         toggle('Preview', s.showPreview, () => ({ showPreview: !getSettings().showPreview }), 'CmdOrCtrl+R'),
+        {
+          label: 'Preview Options',
+          submenu: [
+            radio('Split', 'split', s.previewMode, (v) => ({ showPreview: true, previewMode: v })),
+            radio('Full', 'full', s.previewMode, (v) => ({ showPreview: true, previewMode: v }), 'CmdOrCtrl+Shift+R'),
+            sep,
+            radio('Fit Width', 'width', s.previewZoom, (v) => ({ showPreview: true, previewZoom: v })),
+            radio('Fit Page', 'page', s.previewZoom, (v) => ({ showPreview: true, previewZoom: v })),
+            sep,
+            item('Reload Preview', 'reloadPreview')
+          ] as MenuItemConstructorOptions[]
+        },
         toggle('Stats', s.showStats, () => ({ showStats: !getSettings().showStats }), 'CmdOrCtrl+Alt+3'),
         item('Command Palette…', 'palette', 'CmdOrCtrl+Shift+P'),
         sep,

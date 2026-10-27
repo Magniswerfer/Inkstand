@@ -7,6 +7,7 @@ import type { Author } from '@shared/types'
 import { editTableAt, insertBlock, insertCallout, insertCodeBlock, insertDate, insertFootnote, insertImageLink, insertLink, insertTable, insertText, setLinePrefix, tidyTable, toggleComment, toggleTask, toggleWrap, type Callout } from './editor/format'
 import { transformSelection, type CaseMode } from './editor/transform'
 import { pasteEdits } from './editor/edits'
+import { startSpeaking, stopSpeaking } from './editor/speech'
 import { startCompletion } from '@codemirror/autocomplete'
 import type { TableOp } from './markdown/table'
 import { htmlToMarkdown } from './editor'
@@ -117,6 +118,7 @@ export class App {
     const root = document.getElementById('app')!
     root.classList.toggle('show-sidebar', s.showSidebar)
     root.classList.toggle('show-preview', s.showPreview)
+    root.classList.toggle('preview-full', s.showPreview && s.previewMode === 'full')
     root.classList.toggle('show-outline', s.showOutline)
     root.classList.toggle('show-stats', s.showStats)
     if (s.showPreview) this.preview.schedule()
@@ -768,6 +770,15 @@ export class App {
     add('toggleSidebar', 'Toggle Library', toggle('showSidebar'))
     add('toggleOutline', 'Toggle Outline', toggle('showOutline'))
     add('togglePreview', 'Toggle Preview', toggle('showPreview'))
+    add('fullPreview', 'Toggle Full Preview', () =>
+      this.set(s().showPreview && s().previewMode === 'full' ? { previewMode: 'split' } : { showPreview: true, previewMode: 'full' })
+    )
+    add('previewZoom', 'Preview Zoom', (zoom: 'width' | 'page') => this.set({ showPreview: true, previewZoom: zoom }), true)
+    add('fitWidth', 'Preview: Fit Width', () => this.set({ showPreview: true, previewZoom: 'width' }))
+    add('fitPage', 'Preview: Fit Page', () => this.set({ showPreview: true, previewZoom: 'page' }))
+    add('reloadPreview', 'Reload Preview', () => this.preview.reload())
+    add('startSpeaking', 'Start Speaking', () => startSpeaking(v(), () => this.status.update()))
+    add('stopSpeaking', 'Stop Speaking', () => stopSpeaking())
     add('toggleStats', 'Toggle Stats', toggle('showStats'))
     add('toggleTypewriter', 'Toggle Typewriter Mode', toggle('typewriter'))
     add('toggleFocus', 'Toggle Focus Mode', () => {

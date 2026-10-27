@@ -382,7 +382,7 @@ app.whenReady().then(async () => {
   const MENU_KEYS: (keyof Settings)[] = [
     'recent', 'showSidebar', 'showOutline', 'showPreview', 'showStats', 'focusMode', 'typewriter', 'syntax',
     'styleCheck', 'theme', 'font', 'lineWidth', 'markup', 'spellcheck', 'smartQuotes', 'smartDashes', 'authorship',
-    'showOrganizer', 'showSortBar', 'showFilterBar', 'librarySort', 'librarySortReverse'
+    'showOrganizer', 'showSortBar', 'showFilterBar', 'librarySort', 'librarySortReverse', 'previewMode', 'previewZoom'
   ]
   buildMenu(openPath)
   let menuTimer: NodeJS.Timeout | undefined

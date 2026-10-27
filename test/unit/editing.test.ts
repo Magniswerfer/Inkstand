@@ -68,3 +68,13 @@ describe('callouts', () => {
     expect(md.render('> [!unknown] text\n')).not.toContain('fw-alert')
   })
 })
+
+import { guessLanguage } from '../../src/renderer/src/editor/speech'
+
+describe('speech language', () => {
+  it('uses front matter, then letters only some languages use', () => {
+    expect(guessLanguage('---\nlang: fr-FR\n---\nBonjour')).toBe('fr-FR')
+    expect(guessLanguage('Det er en god dag på øen.')).toBe('da')
+    expect(guessLanguage('Das ist nicht gut und schön.')).toBe('de')
+  })
+})

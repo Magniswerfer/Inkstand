@@ -7,6 +7,7 @@ export interface Stats {
   sentences: number
   paragraphs: number
   readingMinutes: number
+  speakingMinutes: number
   pages: number
 }
 
@@ -38,7 +39,7 @@ export function countWords(text: string): number {
   return n
 }
 
-export function computeStats(md: string, wordsPerMinute = 230, wordsPerPage = 275): Stats {
+export function computeStats(md: string, wordsPerMinute = 230, wordsPerPage = 275, speakingWordsPerMinute = 150): Stats {
   const text = plainText(md)
   const words = countWords(text)
   const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim()).length
@@ -54,6 +55,7 @@ export function computeStats(md: string, wordsPerMinute = 230, wordsPerPage = 27
     sentences,
     paragraphs,
     readingMinutes: words / wordsPerMinute,
+    speakingMinutes: words / speakingWordsPerMinute,
     pages: words / wordsPerPage
   }
 }

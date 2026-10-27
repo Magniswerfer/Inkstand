@@ -6,8 +6,8 @@ import { computeStats, formatReadingTime, type Stats } from '../stats'
 import { clear, debounce, h } from './dom'
 import { contextMenu } from './overlay'
 
-const METRICS: StatMetric[] = ['words', 'characters', 'sentences', 'paragraphs', 'readingTime', 'pages']
-const LABEL: Record<StatMetric, string> = { words: 'Words', characters: 'Characters', sentences: 'Sentences', paragraphs: 'Paragraphs', readingTime: 'Reading Time', pages: 'Pages' }
+const METRICS: StatMetric[] = ['words', 'characters', 'sentences', 'paragraphs', 'readingTime', 'speakingTime', 'pages']
+const LABEL: Record<StatMetric, string> = { words: 'Words', characters: 'Characters', sentences: 'Sentences', paragraphs: 'Paragraphs', readingTime: 'Reading Time', speakingTime: 'Speaking Time', pages: 'Pages' }
 
 function format(metric: StatMetric, s: Stats): string {
   switch (metric) {
@@ -20,7 +20,9 @@ function format(metric: StatMetric, s: Stats): string {
     case 'paragraphs':
       return `${s.paragraphs.toLocaleString()} paragraphs`
     case 'readingTime':
-      return formatReadingTime(s.readingMinutes)
+      return `${formatReadingTime(s.readingMinutes)} reading`
+    case 'speakingTime':
+      return `${formatReadingTime(s.speakingMinutes)} speaking`
     case 'pages':
       return `${s.pages < 1 ? s.pages.toFixed(1) : Math.round(s.pages)} pages`
   }
@@ -52,7 +54,7 @@ export class StatusBar {
     const app = this.app
     const s = app.settings
     const sel = app.editor.selectionText()
-    const stats = computeStats(sel || app.text, s.wordsPerMinute, s.wordsPerPage)
+    const stats = computeStats(sel || app.text, s.wordsPerMinute, s.wordsPerPage, s.speakingWordsPerMinute)
     clear(this.left)
     clear(this.right)
 
