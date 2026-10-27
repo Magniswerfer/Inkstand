@@ -274,6 +274,32 @@ function tagPlugin(md: MD) {
   md.renderer.rules.hashtag = (tokens, i) => `<span class="fw-tag">#${escapeHtml(tokens[i].content)}</span>`
 }
 
+const ALERTS: Record<string, string> = { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution' }
+
+/** GitHub-style callouts: a blockquote whose first line is [!NOTE], [!TIP], [!IMPORTANT], [!WARNING] or [!CAUTION]. */
+function alertPlugin(md: MD) {
+  md.core.ruler.after('inline', 'alerts', (state) => {
+    const tokens = state.tokens
+    for (let i = 0; i < tokens.length - 2; i++) {
+      if (tokens[i].type !== 'blockquote_open' || tokens[i + 1].type !== 'paragraph_open') continue
+      const inline = tokens[i + 2]
+      const m = /^\[!(\w+)\][ \t]*(\n|$)/.exec(inline.content)
+      const kind = m?.[1].toLowerCase()
+      if (!m || !kind || !ALERTS[kind]) continue
+      tokens[i].attrJoin('class', `fw-alert fw-alert-${kind}`)
+      inline.content = inline.content.slice(m[0].length)
+      const kids = inline.children ?? []
+      if (kids[0]?.type === 'text') kids[0].content = kids[0].content.replace(/^\[!\w+\][ \t]*/, '')
+      while (kids.length && ((kids[0].type === 'text' && !kids[0].content) || kids[0].type === 'softbreak')) kids.shift()
+      const title = new state.Token('html_block', '', 0)
+      title.content = `<p class="fw-alert-title">${ALERTS[kind]}</p>\n`
+      tokens.splice(i + 1, 0, title)
+      // An alert with no body leaves an empty paragraph behind; drop it.
+      if (!inline.content.trim()) tokens.splice(i + 2, 3)
+    }
+  })
+}
+
 function tocPlugin(md: MD) {
   md.core.ruler.push('toc', (state) => {
     const headings = state.tokens
@@ -330,6 +356,7 @@ export function createMarkdown() {
   md.use((m) => wikiPlugin(m, () => wikiResolver))
   md.use(tagPlugin)
   md.use(tocPlugin)
+  md.use(alertPlugin)
   md.use((m) => sourceLines(m, () => lineOffset))
   return md
 }

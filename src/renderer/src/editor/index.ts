@@ -19,6 +19,7 @@ import { partsOfSpeech } from './syntax'
 import { highlightStyle } from './theme'
 import { typewriter } from './typewriter'
 import { typography } from './typography'
+import { tableNextCell } from './format'
 
 export interface EditorHost extends CompletionSource {
   onDocChanged(): void
@@ -104,6 +105,7 @@ export class Editor {
       authorshipField,
       completions(host),
       keymap.of([
+        { key: 'Tab', run: (v) => tableNextCell(v, 1), shift: (v) => tableNextCell(v, -1) },
         {
           key: 'Tab',
           run: (v) => {

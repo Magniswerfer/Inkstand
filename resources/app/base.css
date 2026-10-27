@@ -51,3 +51,14 @@ dd { margin-left: 1.5em; }
   pre, blockquote, figure, table, img { break-inside: avoid; }
   a { color: inherit; }
 }
+
+/* Callouts (GitHub alert syntax) */
+.fw-alert { border-left: 3px solid var(--fw-alert, #1f6feb); opacity: 1; padding: 0.2em 0 0.2em 1em; }
+.fw-alert-title { font-weight: 600; color: var(--fw-alert, #1f6feb); margin: 0 0 0.3em; }
+.fw-alert > :last-child { margin-bottom: 0; }
+.fw-alert-note { --fw-alert: #1f6feb; }
+.fw-alert-tip { --fw-alert: #1a7f37; }
+.fw-alert-important { --fw-alert: #8250df; }
+.fw-alert-warning { --fw-alert: #9a6700; }
+.fw-alert-caution { --fw-alert: #cf222e; }
+.page-break { break-after: page; page-break-after: always; height: 0; }

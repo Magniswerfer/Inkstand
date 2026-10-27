@@ -1,7 +1,7 @@
 // Formatting commands behind the Format menu and shortcuts.
 import { EditorSelection, type ChangeSpec, type SelectionRange } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import { emptyTable, formatTable, isDelimiterRow, isTableLine } from '../markdown/table'
+import { cellOffset, columnAt, editTable, emptyTable, formatTable, isDelimiterRow, isTableLine, lineOfRow, parseTable, renderTable, rowOfLine, type TableOp } from '../markdown/table'
 
 function wordAt(view: EditorView, range: SelectionRange) {
   if (!range.empty) return range
@@ -163,21 +163,143 @@ export function insertTable(view: EditorView) {
   insertText(view, emptyTable(), true)
 }
 
-/** Aligns the pipe table under the caret. Returns false if the caret isn't in a table. */
-export function tidyTable(view: EditorView): boolean {
+interface TableAt {
+  from: number
+  to: number
+  lines: string[]
+  /** Index of the caret's line within `lines`. */
+  index: number
+  col: number
+}
+
+/** The pipe table around the caret, if any. */
+export function tableAt(view: EditorView): TableAt | null {
   const { state } = view
-  const here = state.doc.lineAt(state.selection.main.head)
-  if (!isTableLine(here.text) && !isDelimiterRow(here.text)) return false
+  const head = state.selection.main.head
+  const here = state.doc.lineAt(head)
+  if (!isTableLine(here.text) && !isDelimiterRow(here.text)) return null
   let a = here.number
   let b = here.number
   while (a > 1 && isTableLine(state.doc.line(a - 1).text)) a--
   while (b < state.doc.lines && isTableLine(state.doc.line(b + 1).text)) b++
   const lines: string[] = []
   for (let i = a; i <= b; i++) lines.push(state.doc.line(i).text)
-  if (!lines.some(isDelimiterRow)) return false
-  const from = state.doc.line(a).from
-  const to = state.doc.line(b).to
-  const formatted = formatTable(lines).join('\n')
-  if (formatted !== state.sliceDoc(from, to)) view.dispatch({ changes: { from, to, insert: formatted }, userEvent: 'input.format' })
+  if (!lines.some(isDelimiterRow)) return null
+  return { from: state.doc.line(a).from, to: state.doc.line(b).to, lines, index: here.number - a, col: columnAt(here.text, head - here.from) }
+}
+
+/** Replaces the table and puts the caret at the start of cell (row, col). */
+function writeTable(view: EditorView, t: TableAt, lines: string[], row: number, col: number) {
+  const text = lines.join('\n')
+  const lineIndex = lineOfRow(row)
+  const anchor = t.from + lines.slice(0, lineIndex).reduce((n, l) => n + l.length + 1, 0) + cellOffset(lines[lineIndex], col)
+  view.dispatch({ changes: { from: t.from, to: t.to, insert: text }, selection: { anchor }, userEvent: 'input.format', scrollIntoView: true })
+}
+
+/** Aligns the pipe table under the caret. Returns false if the caret isn't in a table. */
+export function tidyTable(view: EditorView): boolean {
+  const t = tableAt(view)
+  if (!t) return false
+  const formatted = formatTable(t.lines)
+  if (formatted.join('\n') !== t.lines.join('\n')) writeTable(view, t, formatted, rowOfLine(t.index), t.col)
   return true
+}
+
+export function editTableAt(view: EditorView, op: TableOp): boolean {
+  const t = tableAt(view)
+  if (!t) return false
+  const r = editTable(parseTable(t.lines), op, rowOfLine(t.index), t.col)
+  writeTable(view, t, renderTable(r.table), r.row, r.col)
+  view.focus()
+  return true
+}
+
+/** Tab / Shift-Tab move between cells, tidying as they go; Tab past the last cell adds a row. */
+export function tableNextCell(view: EditorView, dir: 1 | -1): boolean {
+  const t = tableAt(view)
+  if (!t || !view.state.selection.main.empty) return false
+  let model = parseTable(t.lines)
+  const cols = model.align.length
+  let row = rowOfLine(t.index)
+  let col = t.col + dir
+  if (col >= cols) {
+    col = 0
+    row++
+  } else if (col < 0) {
+    col = cols - 1
+    row--
+  }
+  if (row < 0) return true
+  if (row >= model.rows.length) model = editTable(model, 'rowBelow', model.rows.length - 1, 0).table
+  writeTable(view, t, renderTable(model), row, col)
+  return true
+}
+
+// ------------------------------------------------------------------ inserts
+
+export function insertDate(view: EditorView) {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  insertText(view, `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`)
+}
+
+export function insertBlock(view: EditorView, text: string, caretOffset = text.length) {
+  const { state } = view
+  const r = state.selection.main
+  const line = state.doc.lineAt(r.from)
+  const before = line.text.trim() ? '\n\n' : r.from > 0 && state.doc.lineAt(r.from - 1).text.trim() ? '\n' : ''
+  const at = line.text.trim() ? line.to : line.from
+  const insert = before + text + '\n'
+  view.dispatch({ changes: { from: at, to: line.text.trim() ? at : line.to, insert }, selection: { anchor: at + before.length + caretOffset }, scrollIntoView: true, userEvent: 'input.format' })
+  view.focus()
+}
+
+export async function insertImageLink(view: EditorView) {
+  let url = ''
+  try {
+    const clip = (await navigator.clipboard.readText()).trim()
+    if (/^https?:\/\/\S+$/.test(clip)) url = clip
+  } catch {
+    // Clipboard unavailable.
+  }
+  const { state } = view
+  const r = state.selection.main
+  const alt = state.sliceDoc(r.from, r.to)
+  const insert = `![${alt}](${url})`
+  view.dispatch({ changes: { from: r.from, to: r.to, insert }, selection: { anchor: alt || !url ? r.from + 2 + alt.length + (alt ? 2 : 0) : r.from + 2 }, userEvent: 'input.format' })
+  view.focus()
+}
+
+/** Wraps the selection in an HTML comment, or removes the comment around it. */
+export function toggleComment(view: EditorView) {
+  const { state } = view
+  const r = state.selection.main
+  const from = r.empty ? state.doc.lineAt(r.from).from : r.from
+  const to = r.empty ? state.doc.lineAt(r.to).to : r.to
+  const text = state.sliceDoc(from, to)
+  const m = /^<!--\s?([\s\S]*?)\s?-->$/.exec(text)
+  const insert = m ? m[1] : `<!-- ${text} -->`
+  view.dispatch({ changes: { from, to, insert }, selection: { anchor: from, head: from + insert.length }, userEvent: 'input.format' })
+  view.focus()
+}
+
+export const CALLOUTS = ['note', 'tip', 'important', 'warning', 'caution'] as const
+export type Callout = (typeof CALLOUTS)[number]
+
+/** Turns the selected lines into a callout (GitHub alert syntax), or retypes an existing one. */
+export function insertCallout(view: EditorView, kind: Callout) {
+  const { state } = view
+  const r = state.selection.main
+  const first = state.doc.lineAt(r.from)
+  const last = state.doc.lineAt(r.to)
+  const marker = `> [!${kind.toUpperCase()}]`
+  if (/^>\s*\[!\w+\]/.test(first.text)) {
+    view.dispatch({ changes: { from: first.from, to: first.to, insert: first.text.replace(/^>\s*\[!\w+\]/, marker) } })
+    return view.focus()
+  }
+  const body = state.sliceDoc(first.from, last.to)
+  const quoted = body.split('\n').map((l) => (/^>/.test(l) ? l : `> ${l}`.trimEnd() || '>')).join('\n')
+  const insert = `${marker}\n${body.trim() ? quoted : '> '}`
+  view.dispatch({ changes: { from: first.from, to: last.to, insert }, selection: { anchor: first.from + insert.length }, userEvent: 'input.format' })
+  view.focus()
 }

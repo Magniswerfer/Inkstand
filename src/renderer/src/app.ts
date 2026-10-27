@@ -2,7 +2,11 @@ import type { DirEntry, Settings } from '@shared/types'
 import { extractTags, extractTitle, fileNameFromTitle, isTextFile } from '@shared/text'
 import { Editor } from './editor'
 import { markBorrowed } from './editor/authorship'
-import { insertCodeBlock, insertFootnote, insertLink, insertTable, insertText, setLinePrefix, tidyTable, toggleTask, toggleWrap } from './editor/format'
+import { editTableAt, insertBlock, insertCallout, insertCodeBlock, insertDate, insertFootnote, insertImageLink, insertLink, insertTable, insertText, setLinePrefix, tidyTable, toggleComment, toggleTask, toggleWrap, type Callout } from './editor/format'
+import { transformSelection, type CaseMode } from './editor/transform'
+import { startCompletion } from '@codemirror/autocomplete'
+import type { TableOp } from './markdown/table'
+import { htmlToMarkdown } from './editor'
 import type { LinkTarget } from './editor/markup'
 import { indentLess, indentMore, moveLineDown, moveLineUp } from '@codemirror/commands'
 import { findNext, findPrevious, openSearchPanel } from '@codemirror/search'
@@ -540,9 +544,25 @@ export class App {
 
     add('undo', 'Undo', () => this.editor.undo(), true)
     add('redo', 'Redo', () => this.editor.redo(), true)
-    add('pastePlain', 'Paste as Plain Text', async () => {
-      const text = await navigator.clipboard.readText()
-      v().dispatch(v().state.replaceSelection(text), { userEvent: 'input.paste' })
+    const pasteAs = async (kind: 'plain' | 'markdown' | 'quote' | 'code') => {
+      const items = await navigator.clipboard.read().catch(() => [])
+      const htmlItem = items.find((i) => i.types.includes('text/html'))
+      const html = htmlItem ? await (await htmlItem.getType('text/html')).text() : ''
+      let text = await navigator.clipboard.readText()
+      if (kind === 'markdown' && html) text = htmlToMarkdown(html)
+      if (kind === 'quote') text = text.split('\n').map((l) => (l ? `> ${l}` : '>')).join('\n')
+      if (kind === 'code') text = '```\n' + text.replace(/\n$/, '') + '\n```'
+      v().dispatch(v().state.replaceSelection(text), { userEvent: 'input.paste', scrollIntoView: true })
+      v().focus()
+    }
+    add('pastePlain', 'Paste as Plain Text', () => pasteAs('plain'))
+    add('pasteAs', 'Paste As', (kind: 'plain' | 'markdown' | 'quote' | 'code') => pasteAs(kind), true)
+    add('pasteMarkdown', 'Paste as Markdown', () => pasteAs('markdown'))
+    add('pasteQuote', 'Paste as Quote', () => pasteAs('quote'))
+    add('pasteCode', 'Paste as Code Block', () => pasteAs('code'))
+    add('copyMarkdown', 'Copy Markdown', async () => {
+      await navigator.clipboard.writeText(this.editor.selectionText() || this.text)
+      toast('Copied Markdown.')
     })
     add('copyHtml', 'Copy as HTML', () => copyAs(this, 'html'))
     add('copyRich', 'Copy as Rich Text', () => copyAs(this, 'rich'))
@@ -598,6 +618,31 @@ export class App {
         (item) => insertText(v(), '/' + item.label, true)
       )
     })
+    add('insertDate', 'Add Date', () => insertDate(v()))
+    add('insertHashtag', 'Add Hashtag', () => {
+      insertText(v(), '#')
+      startCompletion(v())
+    })
+    add('insertPageBreak', 'Add Page Break', () => insertBlock(v(), '<div class="page-break"></div>'))
+    add('insertToc', 'Add Table of Contents', () => insertBlock(v(), '[TOC]'))
+    add('insertImage', 'Add Image Link', () => insertImageLink(v()))
+    add('insertMath', 'Add Display Math', () => insertBlock(v(), '$$\n\n$$', 3))
+    add('comment', 'Comment', () => toggleComment(v()))
+    add('callout', 'Callout', (kind: Callout) => insertCallout(v(), kind), true)
+    for (const k of ['note', 'tip', 'important', 'warning', 'caution'] as Callout[]) add(`callout-${k}`, `Callout: ${k[0].toUpperCase() + k.slice(1)}`, () => insertCallout(v(), k))
+    add('case', 'Change Case', (mode: CaseMode) => transformSelection(v(), mode), true)
+    add('titleCase', 'Make Title Case', () => transformSelection(v(), 'title'))
+    add('upperCase', 'Make Upper Case', () => transformSelection(v(), 'upper'))
+    add('lowerCase', 'Make Lower Case', () => transformSelection(v(), 'lower'))
+    add('capitalize', 'Capitalize', () => transformSelection(v(), 'capitalize'))
+    const TABLE_OPS: [TableOp, string][] = [
+      ['rowAbove', 'Add Row Above'], ['rowBelow', 'Add Row Below'], ['deleteRow', 'Delete Row'], ['rowUp', 'Move Row Up'], ['rowDown', 'Move Row Down'],
+      ['colBefore', 'Add Column Before'], ['colAfter', 'Add Column After'], ['deleteCol', 'Delete Column'], ['colLeft', 'Move Column Left'], ['colRight', 'Move Column Right'],
+      ['alignLeft', 'Align Column Left'], ['alignCenter', 'Align Column Center'], ['alignRight', 'Align Column Right'],
+      ['sortAsc', 'Sort Column Ascending'], ['sortDesc', 'Sort Column Descending'], ['transpose', 'Transpose Rows and Columns']
+    ]
+    add('table', 'Edit Table', (op: TableOp) => editTableAt(v(), op) || toast('Put the cursor inside a table first.'), true)
+    for (const [op, title] of TABLE_OPS) add(`table-${op}`, `Table: ${title}`, () => editTableAt(v(), op) || toast('Put the cursor inside a table first.'))
     add('indent', 'Indent', () => indentMore(v()), true)
     add('outdent', 'Outdent', () => indentLess(v()), true)
     add('lineUp', 'Move Line Up', () => moveLineUp(v()), true)

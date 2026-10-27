@@ -368,3 +368,16 @@ body.typing #editor .cm-scroller::-webkit-scrollbar-thumb {
 #editor .cm-selectionMatch {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
+
+/* Callout markers: > [!NOTE] and friends */
+.cm-fw-alert { font-weight: 600; }
+.cm-fw-alert-note { color: #1f6feb; }
+.cm-fw-alert-tip { color: #1a7f37; }
+.cm-fw-alert-important { color: #8250df; }
+.cm-fw-alert-warning { color: #9a6700; }
+.cm-fw-alert-caution { color: #cf222e; }
+:root[data-theme='dark'] .cm-fw-alert-note { color: #58a6ff; }
+:root[data-theme='dark'] .cm-fw-alert-tip { color: #3fb950; }
+:root[data-theme='dark'] .cm-fw-alert-important { color: #a371f7; }
+:root[data-theme='dark'] .cm-fw-alert-warning { color: #d29922; }
+:root[data-theme='dark'] .cm-fw-alert-caution { color: #f85149; }

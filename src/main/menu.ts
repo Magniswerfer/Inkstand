@@ -102,11 +102,30 @@ export function buildMenu(openRecent: (path: string) => void) {
         { role: 'cut' },
         { role: 'copy' },
         { role: 'paste' },
-        item('Paste as Plain Text', 'pastePlain', 'CmdOrCtrl+Alt+Shift+V'),
+        {
+          label: 'Paste As',
+          submenu: [
+            item('Plain Text', 'pasteAs', 'CmdOrCtrl+Alt+Shift+V', 'plain'),
+            item('Markdown', 'pasteAs', undefined, 'markdown'),
+            item('Quote', 'pasteAs', undefined, 'quote'),
+            item('Code Block', 'pasteAs', undefined, 'code')
+          ]
+        },
         { role: 'selectAll' },
         sep,
         item('Copy as HTML', 'copyHtml', 'CmdOrCtrl+Alt+C'),
         item('Copy as Rich Text', 'copyRich', 'CmdOrCtrl+Alt+Shift+C'),
+        item('Copy Markdown', 'copyMarkdown'),
+        sep,
+        {
+          label: 'Transformations',
+          submenu: [
+            item('Make Title Case', 'case', undefined, 'title'),
+            item('Make Upper Case', 'case', 'CmdOrCtrl+Alt+U', 'upper'),
+            item('Make Lower Case', 'case', 'CmdOrCtrl+Alt+Shift+U', 'lower'),
+            item('Capitalize', 'case', undefined, 'capitalize')
+          ]
+        },
         sep,
         {
           label: 'Find',
@@ -160,11 +179,53 @@ export function buildMenu(openRecent: (path: string) => void) {
         item('Task', 'taskList', 'CmdOrCtrl+Alt+T'),
         item('Toggle Task Done', 'toggleTask', 'CmdOrCtrl+Enter'),
         item('Code Block', 'codeBlock', 'CmdOrCtrl+Alt+K'),
-        item('Horizontal Rule', 'rule'),
         sep,
-        item('Insert Table', 'insertTable', 'CmdOrCtrl+Alt+Shift+T'),
-        item('Tidy Table', 'formatTable', 'CmdOrCtrl+Alt+Shift+F'),
-        item('Insert Content Block…', 'insertBlock', 'CmdOrCtrl+Shift+I'),
+        {
+          label: 'Callout',
+          submenu: ['Note', 'Tip', 'Important', 'Warning', 'Caution'].map((k) => item(k, 'callout', undefined, k.toLowerCase()))
+        },
+        item('Comment', 'comment', 'CmdOrCtrl+Alt+/'),
+        sep,
+        {
+          label: 'Add',
+          submenu: [
+            item('Content Block…', 'insertBlock', 'CmdOrCtrl+Shift+I'),
+            item('Image Link', 'insertImage'),
+            item('Table', 'insertTable', 'CmdOrCtrl+Alt+Shift+T'),
+            item('Table of Contents', 'insertToc'),
+            item('Display Math', 'insertMath'),
+            item('Date', 'insertDate'),
+            item('Hashtag', 'insertHashtag'),
+            item('Horizontal Rule', 'rule'),
+            item('Page Break', 'insertPageBreak', 'CmdOrCtrl+Alt+Enter')
+          ]
+        },
+        {
+          label: 'Table',
+          submenu: [
+            item('Tidy Table', 'formatTable', 'CmdOrCtrl+Alt+Shift+F'),
+            sep,
+            item('Add Row Above', 'table', undefined, 'rowAbove'),
+            item('Add Row Below', 'table', 'CmdOrCtrl+Alt+Shift+Down', 'rowBelow'),
+            item('Delete Row', 'table', undefined, 'deleteRow'),
+            item('Move Row Up', 'table', undefined, 'rowUp'),
+            item('Move Row Down', 'table', undefined, 'rowDown'),
+            sep,
+            item('Add Column Before', 'table', undefined, 'colBefore'),
+            item('Add Column After', 'table', 'CmdOrCtrl+Alt+Shift+Right', 'colAfter'),
+            item('Delete Column', 'table', undefined, 'deleteCol'),
+            item('Move Column Left', 'table', undefined, 'colLeft'),
+            item('Move Column Right', 'table', undefined, 'colRight'),
+            sep,
+            item('Align Column Left', 'table', undefined, 'alignLeft'),
+            item('Align Column Center', 'table', undefined, 'alignCenter'),
+            item('Align Column Right', 'table', undefined, 'alignRight'),
+            sep,
+            item('Sort Column Ascending', 'table', undefined, 'sortAsc'),
+            item('Sort Column Descending', 'table', undefined, 'sortDesc'),
+            item('Transpose Rows and Columns', 'table', undefined, 'transpose')
+          ]
+        },
         sep,
         item('Indent', 'indent', 'CmdOrCtrl+]'),
         item('Outdent', 'outdent', 'CmdOrCtrl+['),

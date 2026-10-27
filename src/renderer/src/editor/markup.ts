@@ -118,6 +118,11 @@ function build(view: EditorView, mode: MarkupMode, hanging: boolean): Decoration
         if (/^#{1,6}\s/.test(line.text) && m.index === 0) continue
         if (!isCodeAt(state, at)) decos.push(tagDeco.range(at, at + m[0].length))
       }
+      const alert = /^(>\s*)(\[!(note|tip|important|warning|caution)\])/i.exec(line.text)
+      if (alert) {
+        const at = line.from + alert[1].length
+        decos.push(Decoration.mark({ class: `cm-fw-alert cm-fw-alert-${alert[3].toLowerCase()}` }).range(at, at + alert[2].length))
+      }
       for (const m of line.text.matchAll(WIKI_RE)) {
         const at = line.from + m.index!
         if (isCodeAt(state, at)) continue
