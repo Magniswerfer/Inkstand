@@ -5,9 +5,10 @@ import { DEFAULT_SETTINGS, type PublishAccount, type Settings } from '@shared/ty
 
 const file = () => join(app.getPath('userData'), 'settings.json')
 let current: Settings | null = null
-const listeners: (() => void)[] = []
+type Listener = (next: Settings, prev: Settings) => void
+const listeners: Listener[] = []
 
-export function onSettingsChanged(fn: () => void) {
+export function onSettingsChanged(fn: Listener) {
   listeners.push(fn)
 }
 
@@ -44,12 +45,13 @@ export function getSettings(): Settings {
 }
 
 export function setSettings(patch: Partial<Settings>): Settings {
-  current = merge(getSettings(), patch)
+  const prev = getSettings()
+  current = merge(prev, patch)
   mkdirSync(app.getPath('userData'), { recursive: true })
   writeFileSync(file(), JSON.stringify(current, null, 2))
   const safe = publicSettings()
   for (const w of BrowserWindow.getAllWindows()) w.webContents.send('settings', safe)
-  for (const fn of listeners) fn()
+  for (const fn of listeners) fn(current, prev)
   return safe
 }
 

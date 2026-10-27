@@ -371,13 +371,23 @@ app.whenReady().then(async () => {
   handle('spell:add', (e, word: string) => e.sender.session.addWordToSpellCheckerDictionary(word))
 
   // Native chrome (vibrancy, dialogs, menus) follows the app's theme setting.
-  const syncTheme = () => (nativeTheme.themeSource = getSettings().theme)
-  syncTheme()
-  onSettingsChanged(syncTheme)
-  const rebuild = () => buildMenu(openPath)
-  rebuild()
-  // Settings changes flip menu checkmarks; rebuilding is cheap.
-  onSettingsChanged(rebuild)
+  // Setting themeSource makes macOS redraw every window, so only do it when the theme changes.
+  nativeTheme.themeSource = getSettings().theme
+  onSettingsChanged((next, prev) => {
+    if (next.theme !== prev.theme) nativeTheme.themeSource = next.theme
+  })
+  // Rebuilding the menu bar is slow on macOS; only do it when a menu checkmark or list changed.
+  const MENU_KEYS: (keyof Settings)[] = [
+    'recent', 'showSidebar', 'showOutline', 'showPreview', 'showStats', 'focusMode', 'typewriter', 'syntax',
+    'styleCheck', 'theme', 'font', 'lineWidth', 'markup', 'spellcheck', 'smartQuotes', 'smartDashes', 'authorship'
+  ]
+  buildMenu(openPath)
+  let menuTimer: NodeJS.Timeout | undefined
+  onSettingsChanged((next, prev) => {
+    if (!MENU_KEYS.some((k) => JSON.stringify(next[k]) !== JSON.stringify(prev[k]))) return
+    clearTimeout(menuTimer)
+    menuTimer = setTimeout(() => buildMenu(openPath), 50)
+  })
 
   const argvFiles = process.argv.slice(1).filter((a) => isTextFile(a) && !a.startsWith('-'))
   const initial = [...pendingOpen, ...argvFiles]

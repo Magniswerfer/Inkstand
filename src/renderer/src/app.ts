@@ -90,6 +90,8 @@ export class App {
 
   private onSettings(s: Settings) {
     const prev = this.settings
+    // Each change arrives twice (the reply and the broadcast to every window); apply it once.
+    if (JSON.stringify(prev) === JSON.stringify(s)) return
     this.settings = s
     applyAppearance(s)
     this.editor.applySettings(s)
