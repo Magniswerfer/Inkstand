@@ -74,5 +74,5 @@ module.exports = {
       { target: 'deb', arch: ['x64'] }
     ]
   },
-  publish: { provider: 'github', owner: 'Magniswerfer', repo: 'foss-write', releaseType: 'draft' }
+  publish: { provider: 'github', owner: 'Magniswerfer', repo: 'Inkstand', releaseType: 'draft' }
 }

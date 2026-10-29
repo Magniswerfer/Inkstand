@@ -412,7 +412,7 @@ export function buildMenu(openRecent: (path: string) => void) {
       submenu: [
         item('Writing Guide', 'guide'),
         item('Markdown Cheat Sheet', 'cheatsheet', 'CmdOrCtrl+/'),
-        { label: 'Project Website', click: () => shell.openExternal('https://github.com/Magniswerfer/foss-write') },
+        { label: 'Project Website', click: () => shell.openExternal('https://github.com/Magniswerfer/Inkstand') },
         ...(isMac ? [] : [sep, { label: 'Check for Updates…', click: checkForUpdatesNow }])
       ]
     }

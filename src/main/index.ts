@@ -263,7 +263,7 @@ app.whenReady().then(async () => {
     applicationName: 'Inkstand',
     applicationVersion: app.getVersion(),
     copyright: 'Free software under the GNU AGPL v3',
-    website: 'https://github.com/Magniswerfer/foss-write',
+    website: 'https://github.com/Magniswerfer/Inkstand',
     iconPath: appIcon()
   })
   // Packaged builds take their icon from the bundle; show it in development too.

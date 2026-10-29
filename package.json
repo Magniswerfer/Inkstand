@@ -59,8 +59,8 @@
     "vitest": "^5.0.5"
   },
   "author": "Inkstand contributors",
-  "repository": "https://github.com/Magniswerfer/foss-write",
-  "homepage": "https://github.com/Magniswerfer/foss-write",
+  "repository": "https://github.com/Magniswerfer/Inkstand",
+  "homepage": "https://github.com/Magniswerfer/Inkstand",
   "dependencies": {
     "electron-updater": "^6.8.11"
   }

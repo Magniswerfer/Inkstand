@@ -11,7 +11,7 @@ import { getSettings, onSettingsChanged } from './settings'
 
 const { autoUpdater } = electronUpdater
 
-const RELEASES = 'https://github.com/Magniswerfer/foss-write/releases/latest'
+const RELEASES = 'https://github.com/Magniswerfer/Inkstand/releases/latest'
 const FIRST_CHECK = 10_000
 const INTERVAL = 6 * 60 * 60 * 1000
 
@@ -56,7 +56,7 @@ function schedule() {
 export function initUpdater() {
   if (!app.isPackaged) return
   // Set here rather than read from app-update.yml, which only publishing builds write.
-  autoUpdater.setFeedURL({ provider: 'github', owner: 'Magniswerfer', repo: 'foss-write' })
+  autoUpdater.setFeedURL({ provider: 'github', owner: 'Magniswerfer', repo: 'Inkstand' })
   autoUpdater.autoDownload = canInstall()
   autoUpdater.autoInstallOnAppQuit = true
 

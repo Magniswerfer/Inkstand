@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs'
 
 const version = (process.argv[2] ?? JSON.parse(readFileSync('package.json', 'utf8')).version).replace(/^v/, '')
-const base = `https://github.com/Magniswerfer/foss-write/releases/download/v${version}`
+const base = `https://github.com/Magniswerfer/Inkstand/releases/download/v${version}`
 const files = [
   ['Mac with Apple silicon (M1 or later)', `Inkstand-${version}-mac-arm64.dmg`],
   ['Mac with an Intel processor', `Inkstand-${version}-mac-x64.dmg`],

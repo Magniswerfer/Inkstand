@@ -7,7 +7,7 @@
 <p align="center">A focused, open-source writing app for Markdown.<br>Plain text files in your own folders, typography first, and tools that help you write better without getting in the way.</p>
 
 <p align="center">
-  <a href="https://github.com/Magniswerfer/foss-write/releases/latest">Download</a> ·
+  <a href="https://github.com/Magniswerfer/Inkstand/releases/latest">Download</a> ·
   <a href="#features">Features</a> ·
   <a href="#development">Development</a>
 </p>
@@ -67,7 +67,7 @@ Inkstand is free software under the GNU AGPL v3. It follows the ideas behind iA 
 
 ## Install
 
-Download the latest version from [Releases](https://github.com/Magniswerfer/foss-write/releases/latest). You only need one file:
+Download the latest version from [Releases](https://github.com/Magniswerfer/Inkstand/releases/latest). You only need one file:
 
 | Your computer | Download |
 | --- | --- |
