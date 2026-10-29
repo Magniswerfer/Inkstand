@@ -1,7 +1,7 @@
 {
   "name": "inkstand",
   "productName": "Inkstand",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A focused, open-source writing app for Markdown.",
   "license": "AGPL-3.0-or-later",
   "main": "./out/main/index.js",
@@ -60,5 +60,8 @@
   },
   "author": "Inkstand contributors",
   "repository": "https://github.com/Magniswerfer/foss-write",
-  "homepage": "https://github.com/Magniswerfer/foss-write"
+  "homepage": "https://github.com/Magniswerfer/foss-write",
+  "dependencies": {
+    "electron-updater": "^6.8.11"
+  }
 }

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- **Automatic updates:** Inkstand checks GitHub for new releases, downloads them in the background and installs them when you quit, or straight away if you choose Restart Now. Check for Updates… is in the Inkstand menu on macOS and the Help menu elsewhere, and Settings → General turns it off. The Linux AppImage updates itself; the `.deb` points you to the download page.
+- **Icon:** the inkwell icon now shows properly in the app, the Dock and the macOS disk image.
+
 ## 0.1.0
 
 The first release of Inkstand: a focused, open-source writing app for Markdown, in the spirit of iA Writer.

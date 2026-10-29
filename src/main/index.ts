@@ -14,6 +14,7 @@ import { publish } from './publish'
 import { resourcePath } from './paths'
 import { handleUrl, SCHEME, type UrlHost } from './urlcommands'
 import { buildMenu, syncMenu } from './menu'
+import { initUpdater } from './updater'
 
 // Inkstand was called FOSS Write before its first release: carry its data over once.
 migrateUserData()
@@ -480,6 +481,8 @@ app.whenReady().then(async () => {
       menuTimer = setTimeout(() => buildMenu(openPath), 50)
     } else syncMenu()
   })
+
+  if (!headless) initUpdater()
 
   // Tests drive URL commands directly instead of through the OS.
   if (headless) (globalThis as any).__fwHandleUrl = (url: string) => handleUrl(url, urlHost)

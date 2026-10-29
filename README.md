@@ -85,6 +85,8 @@ Not sure which Mac you have? Choose **Apple menu → About This Mac**: it says "
 
 The other files on the release page (`.zip`, `.blockmap`, `latest*.yml`) are used for updates; you don't need to download them.
 
+From 0.1.1 on, Inkstand keeps itself up to date: it downloads new releases in the background and installs them when you quit. Turn this off in Settings → General.
+
 Upgrading from FOSS Write (Inkstand's working name)? Your settings, version history and authorship are carried over on first launch.
 
 ## Development
@@ -108,7 +110,7 @@ npm run dev
 
 1. Bump `version` in `package.json`, add a section for it to `CHANGELOG.md`, and commit.
 2. Tag and push: `git tag v0.1.0 && git push origin v0.1.0`.
-3. The [Release workflow](.github/workflows/release.yml) builds macOS (Apple Silicon and Intel), Windows and Linux installers into a **draft** release titled "Inkstand <version>", with a download table and the changelog section as its notes (`scripts/release-notes.mjs`). Check it and publish.
+3. The [Release workflow](.github/workflows/release.yml) builds macOS (Apple Silicon and Intel), Windows and Linux installers into a **draft** release titled "Inkstand <version>", with a download table and the changelog section as its notes (`scripts/release-notes.mjs`). Check it and publish; installed copies only see a release once it is published.
 
 macOS builds are signed and notarized when these repository secrets are set (without them, builds fall back to ad-hoc signing): `MAC_CERTIFICATE` (a base64-encoded Developer ID Application `.p12`), `MAC_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID`. See `electron-builder.config.cjs`.
 

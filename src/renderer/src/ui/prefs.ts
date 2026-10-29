@@ -53,6 +53,7 @@ export function openPreferences(app: App, initialTab = 'general') {
           row('Speaking speed', num('speakingWordsPerMinute', 60, 300, 5), 'Words per minute, for speaking time.'),
           row('Words per page', num('wordsPerPage', 100, 800, 5)),
           row('Autosave', bool('autosave'), 'Save changes automatically as you write.'),
+          row('Update automatically', bool('autoUpdate'), 'Download new versions in the background and install them when you quit.'),
           row('URL commands', urlTokenControl(app), 'Other apps and Shortcuts can open, create, read and write documents with inkstand:// links. Reading and writing need this token.'),
           row('New file extension', select('defaultExtension', [['md', '.md'], ['markdown', '.markdown'], ['txt', '.txt']]))
         )

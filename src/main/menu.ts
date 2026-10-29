@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, shell, type MenuItemConstructorOptions } from 'electron'
 import type { Settings } from '@shared/types'
 import { getSettings, setSettings } from './settings'
+import { checkForUpdatesNow } from './updater'
 
 const isMac = process.platform === 'darwin'
 
@@ -55,6 +56,7 @@ export function buildMenu(openRecent: (path: string) => void) {
             label: app.name,
             submenu: [
               { role: 'about' },
+              { label: 'Check for Updates…', click: checkForUpdatesNow },
               sep,
               item('Settings…', 'preferences', 'Cmd+,'),
               sep,
@@ -410,7 +412,8 @@ export function buildMenu(openRecent: (path: string) => void) {
       submenu: [
         item('Writing Guide', 'guide'),
         item('Markdown Cheat Sheet', 'cheatsheet', 'CmdOrCtrl+/'),
-        { label: 'Project Website', click: () => shell.openExternal('https://github.com/Magniswerfer/foss-write') }
+        { label: 'Project Website', click: () => shell.openExternal('https://github.com/Magniswerfer/foss-write') },
+        ...(isMac ? [] : [sep, { label: 'Check for Updates…', click: checkForUpdatesNow }])
       ]
     }
   ]

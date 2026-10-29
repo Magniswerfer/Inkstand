@@ -140,6 +140,8 @@ export interface Settings {
   }
   versions: { enabled: boolean; intervalMinutes: number; max: number }
   autosave: boolean
+  /** Download new releases in the background and install them on quit. */
+  autoUpdate: boolean
   defaultExtension: 'md' | 'markdown' | 'txt'
   publishAccounts: PublishAccount[]
   /** Secret for URL commands that read or write documents. */
@@ -212,6 +214,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   versions: { enabled: true, intervalMinutes: 10, max: 200 },
   autosave: true,
+  autoUpdate: true,
   defaultExtension: 'md',
   publishAccounts: [],
   urlToken: '',
